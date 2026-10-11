@@ -19,15 +19,20 @@ pnpm install
 pnpm dev                                     # http://localhost:5175 (proxies /api → :8000)
 ```
 
-Demo login: `DCS_DEMO_EMAIL` / `DCS_DEMO_PASSWORD` from `flightmode-api/.env.example`.
+Demo login: `DCS_DEMO_EMAIL` / `DCS_DEMO_PASSWORD` from `flightmode-api/.env.example` (UBN station agent, all airlines).
+
+Per-airline users for every role (`DemoUsersSeeder`, also run by `DcsDemoSeeder`), password `DEMO_USERS_PASSWORD`:
+`<om|mr>.<admin|staff|station|gate|agency.admin|agency.agent>@demo.flightmode.mn` — MIAT (`om`) and Hunnu Air (`mr`).
+Station / gate agents are UBN ground staff of their airline and see only its flights; gate agents are assigned to
+those flights. Agency users belong to the airline's demo sales agency and see flights only once it has allocations.
 
 ## Config
 
 | Variable | Default | |
 |---|---|---|
-| `VITE_API_URL` | `/api/v1` | API base (absolute URL in production) |
+| `VITE_API_URL` | `/api/v1` | API base — production build: `http://159.89.82.25/api/v1` (`.env.production`) |
 | `VITE_API_PROXY_TARGET` | `http://localhost:8000` | Vite dev proxy target |
-| `VITE_REVERB_APP_KEY` | — | Reverb client key (= API `REVERB_APP_KEY`); empty → live updates off. Put it in `.env.local` |
+| `VITE_REVERB_APP_KEY` | — | Reverb client key (= API `REVERB_APP_KEY`); empty → live updates off. Local key: `.env.development.local` (dev only, so a production build never carries it). Off in production until Reverb is exposed |
 | `VITE_REVERB_HOST` / `PORT` / `SCHEME` | page host / `8090` / `http` | Reverb websocket |
 
 ## Structure
