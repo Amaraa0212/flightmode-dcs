@@ -4,6 +4,11 @@ import { api } from '@/config/api'
 import type { ApiErrorBody } from '../../types/shared/common.types'
 
 /** flightmode-api business / validation error (HTTP 422 гэх мэт) */
+/** Development: the local API is not running · production: the server is down or unreachable */
+const UNREACHABLE = import.meta.env.DEV
+  ? 'Cannot reach flightmode-api. Start it with `php artisan serve` (port 8000).'
+  : `Cannot reach the server (${api.base}). Check the connection and try again.`
+
 export class ApiError extends Error {
   status: number
   code?: string
@@ -53,7 +58,7 @@ client.interceptors.response.use(
       firstFieldError ??
       body?.message ??
       (unreachable
-        ? 'Cannot reach flightmode-api. Start it with `php artisan serve` (port 8000).'
+        ? UNREACHABLE
         : error.message)
 
     return Promise.reject(new ApiError(message, status, body?.code, body?.errors))
