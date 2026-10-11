@@ -30,7 +30,7 @@ those flights. Agency users belong to the airline's demo sales agency and see fl
 
 | Variable | Default | |
 |---|---|---|
-| `VITE_API_URL` | `/api/v1` | API base — production build: `http://159.89.82.25/api/v1` (`.env.production`) |
+| `VITE_API_URL` | `/api/v1` | API base. Production (Vercel) keeps `/api/v1`: `vercel.json` rewrites `/api` to `http://159.89.82.25/api`, so the https page never calls http directly |
 | `VITE_API_PROXY_TARGET` | `http://localhost:8000` | Vite dev proxy target |
 | `VITE_REVERB_APP_KEY` | — | Reverb client key (= API `REVERB_APP_KEY`); empty → live updates off. Local key: `.env.development.local` (dev only, so a production build never carries it). Off in production until Reverb is exposed |
 | `VITE_REVERB_HOST` / `PORT` / `SCHEME` | page host / `8090` / `http` | Reverb websocket |
