@@ -13,6 +13,7 @@ export {
   dcsBaggageService,
   dcsSeatMapService,
   announcementService,
+  issueReportService,
 } from './api/dcs/dcs.service'
 
 // ─── Types ───

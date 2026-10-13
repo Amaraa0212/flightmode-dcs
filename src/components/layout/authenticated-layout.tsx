@@ -10,6 +10,7 @@ import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AnnouncementBell, RequiredAnnouncementsModal } from '@/components/announcements'
 import { ConfigDrawer } from '@/components/config-drawer'
+import { PageHelp } from '@/components/page-help/page-help'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -55,6 +56,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               <Header fixed>
                 <Search />
                 <div className='ms-auto flex items-center space-x-4'>
+                  <PageHelp />
                   <AnnouncementBell />
                   <ThemeSwitch />
                   <ConfigDrawer />
