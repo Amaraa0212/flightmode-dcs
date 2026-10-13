@@ -307,3 +307,11 @@ export const announcementService = {
     return ok(null, res.data.message)
   },
 }
+
+/** POST /issue-reports — a problem reported from the page help panel (stored in issue_reports) */
+export const issueReportService = {
+  send: async (payload: { page_path: string; page_title?: string; message: string }) => {
+    const res = await client.post<ApiAction<{ id: number }>>('/issue-reports', payload)
+    return ok(null, res.data.message)
+  },
+}
