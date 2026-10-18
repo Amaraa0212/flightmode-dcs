@@ -94,10 +94,10 @@ export const createPassengerColumns = ({
                 'flex items-center gap-0.5 rounded px-1 text-[10px] font-bold',
                 colors?.get(pax.group_id)?.chip ?? 'text-muted-foreground'
               )}
-              title={`Check-in group #${pax.group_id} · shared baggage`}
+              title={`Check-in group ${colors?.get(pax.group_id)?.number ?? ''} · shared baggage`}
             >
               <Users className='size-3' />
-              {pax.group_id}
+              {colors?.get(pax.group_id)?.number ?? pax.group_id}
             </span>
           )}
           {pax.screening && pax.screening.status !== 'cleared' && (

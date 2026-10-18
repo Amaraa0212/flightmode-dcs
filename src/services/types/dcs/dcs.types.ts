@@ -33,8 +33,12 @@ export interface DcsAirport {
   name: string
 }
 
+export type PaxTypeCounts = { ADT: number; CHD: number; INF: number }
+
 export interface FlightStats {
   capacity: number
+  /** ADT / CHD / INF behind booked, checked in and boarded (full flight statistics only) */
+  breakdown?: { booked: PaxTypeCounts; checked_in: PaxTypeCounts; boarded: PaxTypeCounts }
   booked: number
   checked_in: number
   boarded: number
@@ -165,6 +169,12 @@ export interface CheckedBaggage extends Record<string, unknown> {
   excess_kg: number
   excess_price: number
   price: number
+  /** billing / transaction number of the excess payment */
+  payment_reference: string | null
+  /** excess not collected (waived) */
+  waived_amount: number
+  waive_reason: string | null
+  waive_authorized_by: string | null
   currency: string
   description: string | null
   tags: BaggageTag[]
@@ -174,7 +184,8 @@ export interface CheckedBaggage extends Record<string, unknown> {
 export interface BaggageRule {
   id: number
   name: string
-  type: 'piece' | 'weight'
+  /** combined = max pieces and one shared free kg pool */
+  type: 'piece' | 'weight' | 'combined'
   cabin_class: CabinClass | null
   pieces: number | null
   weight_kg: number | null
@@ -197,6 +208,11 @@ export interface AddBaggagePayload {
   pieces: number
   weight_kg: number
   description?: string
+  /** excess: paid … */
+  payment_reference?: string
+  /** … or waived, with who allowed it */
+  waive_reason?: string
+  waive_authorized_by?: string
 }
 
 /** POST /dcs/segments/{id}/baggage/quote */
@@ -206,6 +222,7 @@ export interface BaggageQuote {
   excess_price: number
   price: number
   excess_price_per_kg: number
+  remaining_allowance_kg: number | null
   currency: string
 }
 

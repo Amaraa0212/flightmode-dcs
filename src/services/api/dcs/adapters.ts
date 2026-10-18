@@ -98,6 +98,11 @@ export function toFlight(api: ApiFlight, statistics?: ApiFlightStatistics): DcsF
 export function toStats(s: ApiFlightStatistics): FlightStats {
   return {
     capacity: s.capacity.total,
+    breakdown: {
+      booked: { ADT: s.booked.ADT, CHD: s.booked.CHD, INF: s.booked.INF },
+      checked_in: { ADT: s.checked_in.ADT, CHD: s.checked_in.CHD, INF: s.checked_in.INF },
+      boarded: { ADT: s.boarded.ADT, CHD: s.boarded.CHD, INF: s.boarded.INF },
+    },
     booked: s.booked.total,
     checked_in: s.checked_in.total,
     boarded: s.boarded.total,
@@ -126,9 +131,14 @@ export function toBaggage(api: ApiCheckedBaggage): CheckedBaggage {
     pieces: api.pieces,
     weight_kg: weight,
     free_allowance_kg: allowance,
-    excess_kg: allowance > 0 ? Math.max(0, weight - allowance) : 0,
+    // crew bags have no allowance; an excess (EBAG) or used-up piece + kg pool is all excess
+    excess_kg: api.type === 'crew' ? 0 : Math.max(0, weight - allowance),
     excess_price: num(api.excess_price),
     price: num(api.price),
+    payment_reference: api.payment_reference ?? null,
+    waived_amount: num(api.waived_amount ?? 0),
+    waive_reason: api.waive_reason ?? null,
+    waive_authorized_by: api.waive_authorized_by ?? null,
     currency: api.currency,
     description: api.description,
     tags: api.tags ?? [],

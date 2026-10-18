@@ -82,6 +82,10 @@ export interface ApiCheckedBaggage {
   free_allowance_kg: string
   price: string
   excess_price: string
+  payment_reference?: string | null
+  waived_amount?: string | null
+  waive_reason?: string | null
+  waive_authorized_by?: string | null
   currency: string
   description: string | null
   tags?: ApiBaggageTag[]
@@ -232,6 +236,8 @@ export interface ApiBaggageQuote {
   excess_price: number
   price: number
   excess_price_per_kg: number
+  /** combined (piece + kg) rule: free kg left after this bag */
+  remaining_allowance_kg: number | null
   currency: string
 }
 

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Outlet } from '@tanstack/react-router'
+import { Outlet, useRouterState } from '@tanstack/react-router'
 import { authService } from '@/services'
 import { useAuthStore } from '@/stores/auth-store'
 import { getCookie } from '@/lib/cookies'
@@ -25,6 +25,8 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('dcs_sidebar_state') !== 'false'
   const setUser = useAuthStore((s) => s.auth.setUser)
+  // the check-in counter needs every pixel of height: the top bar opens on mouse over there
+  const onCounter = useRouterState({ select: (s) => /^\/flights\/\d+/.test(s.location.pathname) })
 
   // Refresh the profile (role, station, permissions) once per session
   useQuery({
@@ -46,14 +48,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             <AppSidebar />
             <SidebarInset
               className={cn(
-                '@container/content',
+                '@container/content relative',
 
                 'has-[[data-layout=fixed]]:h-svh',
 
                 'peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-(var(--spacing)*4))]'
               )}
             >
-              <Header fixed>
+              <Header fixed autoHide={onCounter}>
                 <Search />
                 <div className='ms-auto flex items-center space-x-4'>
                   <PageHelp />

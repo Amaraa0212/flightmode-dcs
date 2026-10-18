@@ -17,12 +17,15 @@ export type PrinterSettings = {
   /** BTP bag tag printer, tried in order (legacy "PrinterBagTag", then "BTP") */
   bagTag: string
   bagTagFallback: string
+  /** paper tray (QZ `bin`) of the bag tag printer, '' = the printer's default feeder */
+  bagTagFeeder: string
 }
 
 export const DEFAULT_PRINTERS: PrinterSettings = {
   boardingPass: 'Printer POS-80',
   bagTag: 'PrinterBagTag',
   bagTagFallback: 'BTP',
+  bagTagFeeder: '',
 }
 
 /** Printer names are per counter PC → kept in this browser only */
@@ -125,7 +128,8 @@ export async function qzPrintHtml(kind: 'boardingPass' | 'bagTag', documents: st
   const printer = await findPrinter(
     kind === 'boardingPass' ? [printers.boardingPass] : [printers.bagTag, printers.bagTagFallback]
   )
-  const config = qz.configs.create(printer, PAGE[kind])
+  const feeder = kind === 'bagTag' ? printers.bagTagFeeder?.trim() : ''
+  const config = qz.configs.create(printer, feeder ? { ...PAGE[kind], bin: feeder } : PAGE[kind])
   for (const html of documents) {
     await qz.print(config, [{ type: 'pixel', format: 'html', flavor: 'plain', data: html }])
   }

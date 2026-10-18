@@ -14,6 +14,7 @@ export {
   dcsSeatMapService,
   announcementService,
   issueReportService,
+  dcsCounterSettingsService,
 } from './api/dcs/dcs.service'
 
 // ─── Types ───

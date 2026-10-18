@@ -315,3 +315,26 @@ export const issueReportService = {
     return ok(null, res.data.message)
   },
 }
+
+// ─── Counter settings (supervisor) — the flight operations endpoints of the back office API ───
+type GateAgent = { id: number; name: string; email?: string }
+
+export const dcsCounterSettingsService = {
+  /** Agents who may work the gate of this flight, and the ones assigned now */
+  gateAgents: async (flightId: number) => {
+    const [candidates, flight] = await Promise.all([
+      client.get<ApiData<GateAgent[]>>(`/admin/flights/${flightId}/gate-agents/candidates`),
+      client.get<ApiData<{ gate_agents?: GateAgent[] }>>(`/admin/flights/${flightId}`),
+    ])
+    return {
+      candidates: candidates.data.data,
+      assigned: (flight.data.data.gate_agents ?? []).map((a) => a.id),
+    }
+  },
+
+  setGate: (flightId: number, gate: string) =>
+    client.put<ApiAction<unknown>>(`/admin/flights/${flightId}/gate`, { gate: gate || null }),
+
+  setGateAgents: (flightId: number, userIds: number[]) =>
+    client.put<ApiAction<unknown>>(`/admin/flights/${flightId}/gate-agents`, { user_ids: userIds }),
+}

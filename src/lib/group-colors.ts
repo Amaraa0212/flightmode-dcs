@@ -14,10 +14,11 @@ const PALETTE = [
   { row: '[&>td]:!bg-orange-500/10 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-orange-500)]', chip: 'bg-orange-500/15 text-orange-600 dark:text-orange-300' },
 ] as const
 
-export type GroupColor = (typeof PALETTE)[number]
+/** `number` — the group's place on this flight (1, 2, 3 …); the database id keeps growing across flights */
+export type GroupColor = (typeof PALETTE)[number] & { number: number }
 
-/** group id → colour, for every group on the flight */
+/** group id → colour and per-flight number, for every group on the flight */
 export function groupColors(groupIds: (number | null)[]): Map<number, GroupColor> {
   const ids = [...new Set(groupIds.filter((id): id is number => id !== null))].sort((a, b) => a - b)
-  return new Map(ids.map((id, i) => [id, PALETTE[i % PALETTE.length]]))
+  return new Map(ids.map((id, i) => [id, { ...PALETTE[i % PALETTE.length], number: i + 1 }]))
 }

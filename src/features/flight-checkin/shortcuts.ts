@@ -20,6 +20,7 @@ export type CommandId =
   | 'nextPax'
   | 'prevPax'
   | 'escape'
+  | 'settings'
 
 type Shortcut = {
   id: CommandId
@@ -32,6 +33,8 @@ type Shortcut = {
   repeat?: boolean
   /** keep the browser default while typing in a field (Ctrl+V pastes) */
   notWhileTyping?: boolean
+  /** supervisor command — left out of the help dialog */
+  hidden?: boolean
 }
 
 export const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl'
@@ -67,6 +70,13 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'group', keys: [MOD, 'G'], label: 'Group the ticked passengers', match: ctrl('KeyG') },
   { id: 'nextPax', keys: ['Alt', '↓'], label: 'Next passenger in the list', match: alt('ArrowDown'), repeat: true },
   { id: 'prevPax', keys: ['Alt', '↑'], label: 'Previous passenger in the list', match: alt('ArrowUp'), repeat: true },
+  {
+    id: 'settings',
+    keys: [MOD, 'Alt', 'Shift', 'S'],
+    label: 'Counter settings (printers, bag tag feeder, gate, gate agents)',
+    match: (e) => e.code === 'KeyS' && (e.ctrlKey || e.metaKey) && e.altKey && e.shiftKey,
+    hidden: true,
+  },
   {
     id: 'escape',
     keys: ['Esc'],

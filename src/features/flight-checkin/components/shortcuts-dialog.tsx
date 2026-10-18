@@ -34,7 +34,7 @@ export function ShortcutsDialog({
           </DialogDescription>
         </DialogHeader>
         <ul className='divide-border/60 divide-y'>
-          {SHORTCUTS.map((s) => (
+          {SHORTCUTS.filter((s) => !s.hidden).map((s) => (
             <li key={s.id} className='flex items-center justify-between gap-4 py-2 text-sm'>
               <span>{s.label}</span>
               <span className='flex shrink-0 items-center gap-1'>

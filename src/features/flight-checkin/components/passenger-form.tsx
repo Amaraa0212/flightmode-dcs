@@ -25,6 +25,12 @@ import {
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+/** yyyy-MM-dd with a 4-digit year — a date input lets a 6-digit year (199001-05-12) through */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+const MIN_DATE = '1900-01-01'
+const MAX_DATE = '2099-12-31'
+const isRealDate = (v: string) => ISO_DATE.test(v) && v >= MIN_DATE && v <= MAX_DATE
+
 export const passengerFormSchema = z
   .object({
   last_name: z.string().trim().min(1, 'Surname is required').max(100),
@@ -34,11 +40,15 @@ export const passengerFormSchema = z
   date_of_birth: z
     .string()
     .min(1, 'Date of birth is required')
+    .refine(isRealDate, 'Enter a valid date (yyyy-mm-dd)')
     .refine((v) => v < today(), 'Must be in the past'),
   nationality: z.string().trim().min(2, '2–3 letters').max(3, '2–3 letters'),
   document_type: z.string().min(1).max(20),
   document_number: z.string().trim().min(3, 'Doc ID is required').max(50),
-  document_expires_at: z.string().min(1, 'Date of expiry is required'),
+  document_expires_at: z
+    .string()
+    .min(1, 'Date of expiry is required')
+    .refine(isRealDate, 'Enter a valid date (yyyy-mm-dd)'),
   phone: z.string().trim().max(50).optional(),
   email: z.union([z.literal(''), z.email('Invalid email')]).optional(),
   emergency_contact: z.string().trim().max(255).optional(),
@@ -64,6 +74,12 @@ export const passengerFormSchema = z
     need('infant_date_of_birth', 'Required')
     need('infant_document_number', 'Required')
     need('infant_document_expires_at', 'Required')
+    for (const field of ['infant_date_of_birth', 'infant_document_expires_at'] as const) {
+      if (v[field] && !isRealDate(v[field]))
+        ctx.addIssue({ code: 'custom', path: [field], message: 'Enter a valid date (yyyy-mm-dd)' })
+    }
+    if (v.infant_date_of_birth && v.infant_date_of_birth > today())
+      ctx.addIssue({ code: 'custom', path: ['infant_date_of_birth'], message: 'Must not be in the future' })
   })
 
 export type PassengerFormValues = z.infer<typeof passengerFormSchema>
@@ -214,7 +230,13 @@ export function PassengerForm({
         <FormItem className='gap-1'>
           <FormLabel className={labelClass}>{label}</FormLabel>
           <FormControl>
-            <Input type='date' {...field} className={cn(inputClass, 'font-mono')} />
+            <Input
+              type='date'
+              min={MIN_DATE}
+              max={name.endsWith('date_of_birth') ? today() : MAX_DATE}
+              {...field}
+              className={cn(inputClass, 'font-mono')}
+            />
           </FormControl>
           <FormMessage className='text-[11px]' />
         </FormItem>
