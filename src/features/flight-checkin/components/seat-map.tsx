@@ -259,9 +259,10 @@ export function SeatMapView({
         // docked under the columns: plane across the full width, legend + Enter action on the right
         <div className='flex min-h-0 flex-1'>
           {grid}
-          <aside className='flex w-64 shrink-0 flex-col justify-between gap-3 border-s p-3'>
+          {/* scrolls instead of pushing the Enter action out of a short docked panel */}
+          <aside className='flex min-h-0 w-64 shrink-0 flex-col gap-3 overflow-y-auto border-s p-3'>
             {legend}
-            {actionBar}
+            {actionBar && <div className='mt-auto'>{actionBar}</div>}
           </aside>
         </div>
       ) : (

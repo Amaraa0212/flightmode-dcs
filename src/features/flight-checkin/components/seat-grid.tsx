@@ -9,7 +9,22 @@ import type { SeatRotation } from '../layout-store'
 |
 |   logical columns: 0 = exit marker · 1..C = seats / aisles of the row · C+1 = exit marker
 |   logical rows:    "FRONT" · a label row where the cabin or the zone changes · one row per seat row
+| Each load zone gets a tinted band behind all of its rows (label included) so staff see where it starts
+| and ends, and the label counts the passengers seated in it.
 */
+
+const ZONE_TONES = [
+  'border-violet-400/40 bg-violet-500/[0.07]',
+  'border-emerald-400/40 bg-emerald-500/[0.07]',
+  'border-sky-400/40 bg-sky-500/[0.07]',
+  'border-amber-400/40 bg-amber-500/[0.07]',
+]
+const ZONE_TEXT = [
+  'border-violet-400/40 bg-violet-500/10 text-violet-600 dark:text-violet-300',
+  'border-emerald-400/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+  'border-sky-400/40 bg-sky-500/10 text-sky-600 dark:text-sky-300',
+  'border-amber-400/40 bg-amber-500/10 text-amber-600 dark:text-amber-300',
+]
 
 type Item = {
   key: string
@@ -17,7 +32,7 @@ type Item = {
   c: number
   rs?: number
   cs?: number
-  kind: 'seat' | 'aisle' | 'exit' | 'label'
+  kind: 'seat' | 'aisle' | 'exit' | 'label' | 'zone'
   node: React.ReactNode
 }
 
@@ -47,7 +62,33 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
   const cols = seatCols + 2
   const sideways = rotation === 90 || rotation === 270
   const items: Item[] = []
+  const bands: Item[] = []
   let r = 0
+
+  // zone → passengers seated in it, and its colour (order of appearance)
+  const zones = [...new Set(map.rows.map((row) => row.zone).filter((z): z is string => !!z))]
+  const paxInZone = new Map<string, number>()
+  map.rows.forEach((row) =>
+    row.seats.forEach((cell) => {
+      if (cell && cell !== 'aisle' && cell.state === 'occupied' && row.zone)
+        paxInZone.set(row.zone, (paxInZone.get(row.zone) ?? 0) + 1)
+    })
+  )
+  const tone = (zone: string) => zones.indexOf(zone) % ZONE_TONES.length
+  let band: { zone: string; start: number } | null = null
+  const closeBand = () => {
+    if (band && r > band.start)
+      bands.push({
+        key: `zone-band-${band.zone}-${band.start}`,
+        r: band.start,
+        rs: r - band.start,
+        c: 0,
+        cs: cols,
+        kind: 'zone',
+        node: null,
+      })
+    band = null
+  }
 
   items.push({
     key: 'front',
@@ -68,6 +109,10 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
     const prev = map.rows[index - 1]
     const newCabin = row.cabin_class !== prev?.cabin_class
     const newZone = !!row.zone && row.zone !== prev?.zone
+    if (row.zone !== prev?.zone) {
+      closeBand()
+      if (row.zone) band = { zone: row.zone, start: r }
+    }
     if (newCabin || newZone) {
       items.push({
         key: `label-${row.row}`,
@@ -84,8 +129,8 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
             )}
             {newCabin && newZone && <span className='text-muted-foreground/50'>·</span>}
             {newZone && (
-              <span className='rounded border border-violet-400/40 bg-violet-500/10 px-1 text-violet-600 dark:text-violet-300'>
-                Zone {row.zone}
+              <span className={cn('rounded border px-1', ZONE_TEXT[tone(row.zone!)])}>
+                Zone {row.zone} · {paxInZone.get(row.zone!) ?? 0} pax
               </span>
             )}
           </span>
@@ -138,6 +183,7 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
     r++
   })
 
+  closeBand()
   const rows = r
 
   return (
@@ -145,12 +191,15 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
       className='grid w-max place-items-center gap-1'
       style={{ gridAutoColumns: 'max-content', gridAutoRows: 'max-content' }}
     >
-      {items.map((item) => (
+      {/* bands first: the seats paint over them */}
+      {[...bands, ...items].map((item) => (
         <div
           key={item.key}
           style={place(item, rotation, rows, cols)}
           className={cn(
             'flex items-center justify-center',
+            item.kind === 'zone' &&
+              cn('-m-0.5 self-stretch justify-self-stretch rounded-lg border', ZONE_TONES[tone(item.key.split('-')[2])]),
             item.kind === 'aisle' && (sideways ? 'h-3.5 w-7' : 'h-6 w-3.5'),
             item.kind === 'label' && (sideways ? 'px-0.5 [writing-mode:vertical-rl]' : 'py-0.5')
           )}

@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { InfoPill, StatusChip } from '@/components/status-chip'
 import { usePassengerActions } from '../hooks/use-dcs-actions'
+import { useFlightGroup } from '../hooks/use-flight-group'
 import { QUERY_KEYS } from './constants'
 import { PanelHeader } from './panel-header'
 import { PassengerLogDialog } from './passenger-log-dialog'
@@ -167,6 +168,7 @@ function PassengerDetails({ flight, pax }: { flight: DcsFlight; pax: DcsPassenge
   const [boardingPassOpen, setBoardingPassOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
   const ssrOptions = useSsrOptions(flight.id)
+  const group = useFlightGroup(flight.id, pax.group_id)
   const ssrName = (code: string) => ssrOptions.find((o) => o.code === code)?.name ?? code
   const { data: activity = [] } = useQuery({
     queryKey: [QUERY_KEYS.ACTIVITY, pax.passenger_id],
@@ -346,13 +348,21 @@ function PassengerDetails({ flight, pax }: { flight: DcsFlight; pax: DcsPassenge
           <Users className='text-brand size-4' />
           <div className='min-w-0 flex-1'>
             <p className='text-muted-foreground text-[11px]'>Check-in group</p>
-            <p className='text-sm font-semibold'>Group #{pax.group_id} · shared baggage</p>
+            <p className='text-sm font-semibold'>
+              Group {group?.number ?? ''} · {group?.members.length ?? ''} pax · shared baggage
+            </p>
+            {!!group?.bagPieces && (
+              <p className='text-[11px] text-amber-600 dark:text-amber-300'>
+                {group.bagPieces} bag(s) checked on the group allowance — delete them before removing a passenger.
+              </p>
+            )}
           </div>
           <Button
             variant='outline'
             size='sm'
             className='h-7 text-xs'
-            disabled={ungroup.isPending}
+            disabled={ungroup.isPending || !!group?.bagPieces}
+            title={group?.bagPieces ? 'Ungrouping is not allowed while the group has checked baggage' : undefined}
             onClick={() => ungroup.mutate(pax.id)}
           >
             Remove from group

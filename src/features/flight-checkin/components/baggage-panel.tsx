@@ -34,10 +34,18 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
   const [crewName, setCrewName] = useState('')
   const [pieces, setPieces] = useState('1')
   const [weight, setWeight] = useState('')
+  // excess baggage is paid (billing / transaction number) or waived (reason + who allowed it)
+  const [settle, setSettle] = useState<'paid' | 'waive'>('paid')
+  const [paymentRef, setPaymentRef] = useState('')
+  const [waiveReason, setWaiveReason] = useState('')
+  const [waivedBy, setWaivedBy] = useState('')
   const weightRef = useRef<HTMLInputElement>(null)
   const { add, addCrew, remove } = useBaggageActions(() => {
     setWeight('')
     setCrewName('')
+    setPaymentRef('')
+    setWaiveReason('')
+    setWaivedBy('')
   })
 
   // crew bags are taken with no passenger selected — a selected passenger only gets their own rules
@@ -98,9 +106,10 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
     enabled: !!segmentId && !!quotePayload && canAccept && !crewMode,
     retry: false,
   })
+  const needsSettlement = !crewMode && !quoteError && (quote?.excess_price ?? 0) > 0
   const totalPieces = list.reduce((s, b) => s + b.pieces, 0)
   const totalWeight = list.reduce((s, b) => s + b.weight_kg, 0)
-  const totalAmount = list.reduce((s, b) => s + b.excess_price + b.price, 0)
+  const totalAmount = list.reduce((s, b) => s + b.excess_price + b.price - b.waived_amount, 0)
 
   const hint = crewMode
     ? !flightOpen && 'Baggage can be accepted only while check-in is open.'
@@ -142,9 +151,24 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
         payload: { crew_name: crewName.trim() || undefined, pieces: pcs, weight_kg: weightKg },
       })
     } else if (pax && selectedRule) {
+      if (needsSettlement && settle === 'paid' && !paymentRef.trim()) {
+        toast.warning('Enter the billing / transaction number of the excess payment, or waive it.')
+        return
+      }
+      if (needsSettlement && settle === 'waive' && (!waiveReason.trim() || !waivedBy.trim())) {
+        toast.warning('Enter why the excess is waived and who allowed it.')
+        return
+      }
       add.mutate({
         segmentId: pax.id,
-        payload: { baggage_rule_id: selectedRule.id, pieces: pcs, weight_kg: weightKg },
+        payload: {
+          baggage_rule_id: selectedRule.id,
+          pieces: pcs,
+          weight_kg: weightKg,
+          ...(needsSettlement && settle === 'paid' && { payment_reference: paymentRef.trim() }),
+          ...(needsSettlement &&
+            settle === 'waive' && { waive_reason: waiveReason.trim(), waive_authorized_by: waivedBy.trim() }),
+        },
       })
     }
   }
@@ -235,7 +259,55 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                   </span>
                 )}
                 {quote.price > 0 && <span> • {quote.price.toLocaleString()}₮</span>}
+                {quote.remaining_allowance_kg !== null && (
+                  <span className='text-emerald-500'> • {quote.remaining_allowance_kg} kg free left</span>
+                )}
               </p>
+            )}
+            {needsSettlement && (
+              <div className='grid gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2'>
+                <div className='flex gap-1 text-[11px]'>
+                  {(['paid', 'waive'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type='button'
+                      onClick={() => setSettle(mode)}
+                      className={cn(
+                        'flex-1 rounded-md border px-2 py-1 font-semibold transition',
+                        settle === mode ? 'border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-300' : 'text-muted-foreground'
+                      )}
+                    >
+                      {mode === 'paid' ? 'Paid' : 'Waive'}
+                    </button>
+                  ))}
+                </div>
+                {settle === 'paid' ? (
+                  <Input
+                    value={paymentRef}
+                    onChange={(e) => setPaymentRef(e.target.value)}
+                    placeholder='Billing / transaction number'
+                    className='h-8 font-mono text-xs'
+                    maxLength={100}
+                  />
+                ) : (
+                  <>
+                    <Input
+                      value={waiveReason}
+                      onChange={(e) => setWaiveReason(e.target.value)}
+                      placeholder='Why is the excess waived?'
+                      className='h-8 text-xs'
+                      maxLength={500}
+                    />
+                    <Input
+                      value={waivedBy}
+                      onChange={(e) => setWaivedBy(e.target.value)}
+                      placeholder='Allowed by (name / position)'
+                      className='h-8 text-xs'
+                      maxLength={100}
+                    />
+                  </>
+                )}
+              </div>
             )}
             <Button type='submit' size='sm' className='h-9 gap-1.5' disabled={add.isPending || addCrew.isPending}>
               {add.isPending || addCrew.isPending ? (
@@ -270,6 +342,14 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                         <span className='text-amber-500'> • +{bag.excess_kg} kg</span>
                       )}
                     </p>
+                    {bag.payment_reference && (
+                      <p className='text-muted-foreground truncate font-mono'>Paid · {bag.payment_reference}</p>
+                    )}
+                    {bag.waived_amount > 0 && (
+                      <p className='truncate text-emerald-600 dark:text-emerald-400' title={bag.waive_reason ?? ''}>
+                        Waived · {bag.waive_authorized_by}
+                      </p>
+                    )}
                   </div>
                   <button
                     type='button'

@@ -28,9 +28,9 @@ import {
 import { StatusChip } from '@/components/status-chip'
 import { useFlightActions } from '../hooks/use-dcs-actions'
 import { FlightStats } from './flight-stats'
-import { PrinterStatus } from './printer-status'
+import { CounterSettingsDialog, PrinterStatus } from './printer-status'
 import { useWorkspaceLayout } from '../layout-store'
-import { MOD } from '../shortcuts'
+import { MOD, useCommand } from '../shortcuts'
 
 type FlightBarProps = {
   flight: DcsFlight
@@ -55,7 +55,10 @@ const LOCKED_REASON: Partial<Record<DcsFlight['status'], string>> = {
 export function FlightBar({ flight, onRefresh, isRefreshing, live = 'off', onShowShortcuts }: FlightBarProps) {
   const { open, close } = useFlightActions(flight.id)
   const [closing, setClosing] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const resetLayout = useWorkspaceLayout((s) => s.reset)
+  // supervisor settings stay out of sight: Ctrl+Alt+Shift+S only
+  useCommand('settings', () => setSettingsOpen(true))
   const departed = new Date(flight.scheduled_departure_at) < new Date()
 
   return (
@@ -126,6 +129,7 @@ export function FlightBar({ flight, onRefresh, isRefreshing, live = 'off', onSho
           {live === 'live' ? 'Live' : live === 'connecting' ? '…' : 'Off'}
         </span>
         <PrinterStatus />
+        {settingsOpen && <CounterSettingsDialog flight={flight} onClose={() => setSettingsOpen(false)} />}
         <Button
           variant='outline'
           size='icon'
