@@ -1,5 +1,5 @@
 export const APP = {
-  name: 'FlightMode DCS',
+  name: 'Skythium DCS',
   subtitle: 'Check-in counter',
   build: 'App Build 3.0.0 (DCS)',
 } as const
