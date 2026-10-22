@@ -138,7 +138,6 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
       })
     }
 
-    const firstAisle = row.seats.indexOf('aisle')
     row.seats.forEach((cell, i) => {
       if (cell === null) return // no seat here — the grid keeps the gap
       if (cell === 'aisle') {
@@ -149,7 +148,7 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
           kind: 'aisle',
           node: (
             <span className='flex size-full items-center justify-center font-mono text-[9px] text-slate-500'>
-              {i === firstAisle ? row.row : ''}
+              {row.row}
             </span>
           ),
         })

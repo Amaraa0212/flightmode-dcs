@@ -170,9 +170,16 @@ const BAG_TAG_CSS = `
 export function bagTagDocument(t: BagTag) {
   const barcode = code128Png(t.barcode)
   const plate = `${t.airline.iata_code} ${t.tag_number.slice(-6)}`
-  const name = t.is_crew ? t.passenger : `${t.passenger} ${t.passenger_title ?? ''}`.trim()
+  const name =
+    t.is_crew || t.is_cargo
+      ? t.passenger
+      : `${t.passenger} ${t.passenger_title ?? ''}`.trim()
   const destName = t.destination.name.toUpperCase()
-  const crew = t.is_crew ? '# CREW BAG' : ''
+  const crew = t.is_cargo
+    ? `# CARGO${t.description ? ` ${e(t.description).toUpperCase()}` : ''}`
+    : t.is_crew
+      ? '# CREW BAG'
+      : ''
   const date = t.date.toUpperCase() // legacy: 29SEP
 
   const via = (rotated: boolean) => `

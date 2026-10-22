@@ -21,6 +21,7 @@ export type CommandId =
   | 'prevPax'
   | 'escape'
   | 'settings'
+  | 'switchFlight'
 
 type Shortcut = {
   id: CommandId
@@ -70,6 +71,22 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'group', keys: [MOD, 'G'], label: 'Group the ticked passengers', match: ctrl('KeyG') },
   { id: 'nextPax', keys: ['Alt', '↓'], label: 'Next passenger in the list', match: alt('ArrowDown'), repeat: true },
   { id: 'prevPax', keys: ['Alt', '↑'], label: 'Previous passenger in the list', match: alt('ArrowUp'), repeat: true },
+  {
+    id: 'switchFlight',
+    keys: ['Alt', '1-9'],
+    label: 'Switch to open flight no. 1-9 (sidebar)',
+    match: (e) => {
+      const digit = /^Digit([1-9])$/.exec(e.code)?.[1]
+      return (
+        !!digit &&
+        e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        Number(digit)
+      )
+    },
+  },
   {
     id: 'settings',
     keys: [MOD, 'Alt', 'Shift', 'S'],

@@ -4,6 +4,7 @@ import { getRouteApi, Link } from '@tanstack/react-router'
 import { PlaneTakeoff } from 'lucide-react'
 import { toast } from 'sonner'
 import { dcsFlightService, dcsPassengerService, type DcsPassenger } from '@/services'
+import { useOpenFlights } from '@/stores/open-flights-store'
 import { useFlightChannel } from '@/hooks/use-flight-channel'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
 import { useSidebar } from '@/components/ui/sidebar'
@@ -52,6 +53,36 @@ export function FlightCheckin() {
     queryKey: [QUERY_KEYS.FLIGHT, flightId],
     queryFn: async () => (await dcsFlightService.getById(flightId)).body,
     retry: false,
+  })
+
+  // this flight in the sidebar's "Open flights", coming back to the same passenger / tab
+  const openFlight = useOpenFlights((st) => st.open)
+  const rememberSearch = useOpenFlights((st) => st.remember)
+  const openFlights = useOpenFlights((st) => st.flights)
+  useEffect(() => {
+    if (!flight) return
+    openFlight({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      route: `${flight.origin.iata_code}-${flight.destination.iata_code}`,
+      departure_time: flight.departure_time,
+      status: flight.status,
+    })
+  }, [flight, openFlight])
+  useEffect(
+    () => rememberSearch(flightId, search),
+    [flightId, search, rememberSearch]
+  )
+
+  // Alt+1-9: the n-th open flight
+  useCommand('switchFlight', (n) => {
+    const target = openFlights[n - 1]
+    if (!target || target.id === flightId) return false
+    void navigate({
+      to: '/flights/$flightId',
+      params: { flightId: String(target.id) },
+      search: (target.search ?? {}) as never,
+    })
   })
 
   const { data: selected } = useQuery({

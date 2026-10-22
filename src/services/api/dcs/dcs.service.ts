@@ -176,6 +176,13 @@ export const dcsPassengerService = {
       (s) => s
     ),
 
+  /** Hold a seat for a booked passenger without checking in (null gives it back); Enter's check-in takes it */
+  holdSeat: (segmentId: number, seatNumber: string | null) =>
+    action(
+      client.put<ApiAction<ApiSegment>>(`/dcs/segments/${segmentId}/seat`, { seat_number: seatNumber }),
+      (s) => s
+    ),
+
   changeSeat: (segmentId: number, seatNumber: string) =>
     action(
       client.post<ApiAction<ApiSegment>>(`/dcs/segments/${segmentId}/check-in`, {
@@ -268,6 +275,19 @@ export const dcsBaggageService = {
   addCrew: (flightId: number, payload: AddCrewBaggagePayload) =>
     action(
       client.post<ApiAction<ApiCheckedBaggage>>(`/dcs/flights/${flightId}/crew-baggage`, payload),
+      toBaggage
+    ),
+
+  /** Cargo / mail: own CARGO tags, not part of the passengers' bags */
+  addCargo: (
+    flightId: number,
+    payload: { pieces: number; weight_kg: number; description?: string }
+  ) =>
+    action(
+      client.post<ApiAction<ApiCheckedBaggage>>(
+        `/dcs/flights/${flightId}/cargo`,
+        payload
+      ),
       toBaggage
     ),
 

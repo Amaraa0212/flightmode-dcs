@@ -4,6 +4,7 @@ import type { DcsFlight } from '@/services'
 import { cn } from '@/lib/utils'
 import { formatDuration, relativeToNow } from '@/lib/flight'
 import { FLIGHT_STATUS } from '@/constants/status'
+import { ServiceTypeBadge } from '@/components/service-type-badge'
 import { StatusChip } from '@/components/status-chip'
 
 function routeNote(flight: DcsFlight) {
@@ -58,9 +59,10 @@ export function FlightCard({ flight }: { flight: DcsFlight }) {
             {flight.airline.iata_code === 'OM' ? 'OM' : <Plane className='size-5' fill='currentColor' />}
           </div>
           <div className='min-w-0'>
-            <p className='truncate font-semibold'>
-              <span className='text-brand font-mono'>( {flight.flight_number} )</span>{' '}
-              {flight.airline.name}
+            <p className='flex min-w-0 items-center gap-2 font-semibold'>
+              <span className='text-brand shrink-0 font-mono'>( {flight.flight_number} )</span>
+              <span className='truncate'>{flight.airline.name}</span>
+              <ServiceTypeBadge type={flight.service_type} />
             </p>
             <p className='text-muted-foreground truncate text-xs'>
               {flight.aircraft.type} • {flight.aircraft.registration}

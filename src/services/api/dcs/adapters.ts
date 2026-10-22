@@ -88,6 +88,7 @@ export function toFlight(api: ApiFlight, statistics?: ApiFlightStatistics): DcsF
     ),
     terminal: api.terminal,
     gate: api.gate,
+    service_type: api.service_type ?? 'scheduled',
     status: api.status,
     status_reason: api.status_reason,
     excess_price_per_kg: num(api.excess_baggage_price_per_kg),
@@ -125,14 +126,19 @@ export function toBaggage(api: ApiCheckedBaggage): CheckedBaggage {
     segment_id: api.passenger_segment_id,
     type: api.type,
     crew_name: api.crew_name ?? null,
-    owner: api.type === 'crew' ? (api.crew_name ?? api.description ?? 'CREW') : (who?.name ?? '—'),
+    owner:
+      api.type === 'crew'
+        ? (api.crew_name ?? api.description ?? 'CREW')
+        : api.type === 'cargo'
+          ? `CARGO${api.description ? ` · ${api.description}` : ''}`
+          : (who?.name ?? '—'),
     pnr: who?.pnr ?? null,
     rule: api.baggage_rule?.name ?? null,
     pieces: api.pieces,
     weight_kg: weight,
     free_allowance_kg: allowance,
     // crew bags have no allowance; an excess (EBAG) or used-up piece + kg pool is all excess
-    excess_kg: api.type === 'crew' ? 0 : Math.max(0, weight - allowance),
+    excess_kg: api.type === 'passenger' ? Math.max(0, weight - allowance) : 0,
     excess_price: num(api.excess_price),
     price: num(api.price),
     payment_reference: api.payment_reference ?? null,
@@ -219,6 +225,7 @@ export function toRule(api: ApiBaggageRule): BaggageRule {
 
 export function toRulesForSegment(api: ApiBaggageRules): BaggageRulesForSegment {
   return {
+    is_charter: !!api.is_charter,
     rules: api.rules.map(toRule),
     prepaid_pieces: api.prepaid_pieces,
     excess_price_per_kg: num(api.excess_price_per_kg),

@@ -19,6 +19,7 @@ type BaggagePanelProps = {
 }
 
 const CREW = 'crew'
+const CARGO = 'cargo'
 
 function Row({ label, value, strong }: { label: string; value: React.ReactNode; strong?: boolean }) {
   return (
@@ -32,6 +33,7 @@ function Row({ label, value, strong }: { label: string; value: React.ReactNode; 
 export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
   const [option, setOption] = useState<string | null>(null)
   const [crewName, setCrewName] = useState('')
+  const [cargoNote, setCargoNote] = useState('')
   const [pieces, setPieces] = useState('1')
   const [weight, setWeight] = useState('')
   // excess baggage is paid (billing / transaction number) or waived (reason + who allowed it)
@@ -40,9 +42,10 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
   const [waiveReason, setWaiveReason] = useState('')
   const [waivedBy, setWaivedBy] = useState('')
   const weightRef = useRef<HTMLInputElement>(null)
-  const { add, addCrew, remove } = useBaggageActions(() => {
+  const { add, addCrew, addCargo, remove } = useBaggageActions(() => {
     setWeight('')
     setCrewName('')
+    setCargoNote('')
     setPaymentRef('')
     setWaiveReason('')
     setWaivedBy('')
@@ -50,6 +53,9 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
 
   // crew bags are taken with no passenger selected — a selected passenger only gets their own rules
   const crewMode = option === CREW && !segmentId
+  const cargoMode = option === CARGO && !segmentId
+  // crew and cargo bags belong to no passenger
+  const flightBagMode = crewMode || cargoMode
   const flightOpen = flight.status === 'checkin_open'
 
   const { data: pax } = useQuery({
@@ -63,11 +69,18 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
     enabled: !!segmentId,
   })
   const { data: crewBags = [] } = useQuery({
-    queryKey: [QUERY_KEYS.BAGGAGE, flight.id, 'crew'],
+    queryKey: [QUERY_KEYS.BAGGAGE, flight.id, option],
     queryFn: async () =>
-      (await dcsBaggageService.list(flight.id, { type: 'crew', pageSize: 500 })).body?.items ?? [],
-    enabled: crewMode,
+      (
+        await dcsBaggageService.list(flight.id, {
+          type: option ?? CREW,
+          pageSize: 500,
+        })
+      ).body?.items ?? [],
+    enabled: flightBagMode,
   })
+  // charter (захиалгат): every bag is free — no rule to pick, no limit, no excess (legacy DCS)
+  const isCharter = !!rules?.is_charter
 
   // Default option: the passenger's free-bag rule for their cabin
   const defaultRule = useMemo(
@@ -77,18 +90,26 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
       rules?.rules[0],
     [rules, pax?.cabin_class]
   )
-  const selectedRule = crewMode
-    ? undefined
-    : (rules?.rules.find((r) => String(r.id) === option) ?? defaultRule)
-  const selectedKey = crewMode ? CREW : selectedRule ? String(selectedRule.id) : null
+  const selectedRule =
+    flightBagMode || isCharter
+      ? undefined
+      : (rules?.rules.find((r) => String(r.id) === option) ?? defaultRule)
+  const selectedKey = flightBagMode
+    ? option
+    : selectedRule
+      ? String(selectedRule.id)
+      : null
 
-  const list = crewMode ? crewBags : (rules?.accepted ?? [])
+  const list = flightBagMode ? crewBags : (rules?.accepted ?? [])
   // bags may be weighed before the check-in (legacy counter) — booked or checked-in passengers
   const paxCanHaveBags =
     !!pax &&
     pax.type !== 'INF' &&
-    (pax.status === 'checked_in' || (pax.status === 'booked' && pax.screening?.status !== 'banned'))
-  const canAccept = crewMode ? flightOpen : flightOpen && paxCanHaveBags && !!selectedRule
+    (pax.status === 'checked_in' ||
+      (pax.status === 'booked' && pax.screening?.status !== 'banned'))
+  const canAccept = flightBagMode
+    ? flightOpen
+    : flightOpen && paxCanHaveBags && (isCharter || !!selectedRule)
 
   // Price preview comes from the API (BaggagePricing) — the counter never calculates prices
   const debouncedPieces = Number(useDebounce(pieces, 300))
@@ -102,16 +123,21 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
   )
   const { data: quote, error: quoteError } = useQuery({
     queryKey: [QUERY_KEYS.SEGMENT_BAGGAGE, segmentId, 'quote', quotePayload],
-    queryFn: async () => (await dcsBaggageService.quote(segmentId!, quotePayload!)).body,
-    enabled: !!segmentId && !!quotePayload && canAccept && !crewMode,
+    queryFn: async () =>
+      (await dcsBaggageService.quote(segmentId!, quotePayload!)).body,
+    enabled: !!segmentId && !!quotePayload && canAccept && !flightBagMode,
     retry: false,
   })
-  const needsSettlement = !crewMode && !quoteError && (quote?.excess_price ?? 0) > 0
+  const needsSettlement =
+    !flightBagMode &&
+    !isCharter &&
+    !quoteError &&
+    (quote?.excess_price ?? 0) > 0
   const totalPieces = list.reduce((s, b) => s + b.pieces, 0)
   const totalWeight = list.reduce((s, b) => s + b.weight_kg, 0)
   const totalAmount = list.reduce((s, b) => s + b.excess_price + b.price - b.waived_amount, 0)
 
-  const hint = crewMode
+  const hint = flightBagMode
     ? !flightOpen && 'Baggage can be accepted only while check-in is open.'
     : !pax
       ? 'Select a passenger to register baggage.'
@@ -119,7 +145,9 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
         ? `Baggage cannot be accepted for a ${pax.status.replace('_', ' ')} passenger.`
         : !flightOpen
           ? 'Baggage can be accepted only while check-in is open.'
-          : !rules?.rules.length && 'No baggage rules are attached to this flight.'
+          : !isCharter &&
+            !rules?.rules.length &&
+            'No baggage rules are attached to this flight.'
 
   // Ctrl+B: straight to the weight field (Enter in it accepts the bag and prints the tag)
   useCommand('baggage', () => {
@@ -150,6 +178,20 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
         flightId: flight.id,
         payload: { crew_name: crewName.trim() || undefined, pieces: pcs, weight_kg: weightKg },
       })
+    } else if (cargoMode) {
+      addCargo.mutate({
+        flightId: flight.id,
+        payload: {
+          description: cargoNote.trim() || undefined,
+          pieces: pcs,
+          weight_kg: weightKg,
+        },
+      })
+    } else if (pax && isCharter) {
+      add.mutate({
+        segmentId: pax.id,
+        payload: { pieces: pcs, weight_kg: weightKg },
+      })
     } else if (pax && selectedRule) {
       if (needsSettlement && settle === 'paid' && !paymentRef.trim()) {
         toast.warning('Enter the billing / transaction number of the excess payment, or waive it.')
@@ -177,13 +219,27 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
     <section className='fm-panel flex min-w-0 flex-col overflow-hidden'>
       <PanelHeader
         title='Baggages Info'
-        subtitle={crewMode ? 'Crew' : pax ? passengerName(pax) : undefined}
+        subtitle={
+          crewMode
+            ? 'Crew'
+            : cargoMode
+              ? 'Cargo'
+              : pax
+                ? passengerName(pax)
+                : undefined
+        }
       />
 
       <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4'>
         <div>
           <p className='mb-2 text-sm font-semibold'>Select Baggage Options:</p>
           <div className='grid gap-1.5'>
+            {pax && isCharter && (
+              <p className='rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300'>
+                <b>Charter flight</b> — every bag is FREE. Enter pieces and
+                weight.
+              </p>
+            )}
             {(pax ? (rules?.rules ?? []) : []).map((rule) => (
               <OptionRow
                 key={rule.id}
@@ -194,19 +250,30 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
               />
             ))}
             {!segmentId && (
-              <OptionRow
-                checked={crewMode}
-                onSelect={() => setOption(crewMode ? null : CREW)}
-                code='CREW'
-                label='Crew bag'
-              />
+              <>
+                <OptionRow
+                  checked={crewMode}
+                  onSelect={() => setOption(crewMode ? null : CREW)}
+                  code='CREW'
+                  label='Crew bag'
+                />
+                <OptionRow
+                  checked={cargoMode}
+                  onSelect={() => setOption(cargoMode ? null : CARGO)}
+                  code='CARGO'
+                  label='Cargo / mail (own CARGO tag)'
+                />
+              </>
             )}
           </div>
-          {!crewMode && rules && rules.prepaid_pieces > 0 && (
-            <p className='text-muted-foreground mt-2 text-xs'>
-              Prepaid (XBAG): {rules.prepaid_pieces} pc
-            </p>
-          )}
+          {!flightBagMode &&
+            !isCharter &&
+            rules &&
+            rules.prepaid_pieces > 0 && (
+              <p className='text-muted-foreground mt-2 text-xs'>
+                Prepaid (XBAG): {rules.prepaid_pieces} pc
+              </p>
+            )}
         </div>
 
         {canAccept ? (
@@ -217,6 +284,15 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                 onChange={(e) => setCrewName(e.target.value)}
                 placeholder='Crew member name'
                 className='h-9 uppercase'
+              />
+            )}
+            {cargoMode && (
+              <Input
+                value={cargoNote}
+                onChange={(e) => setCargoNote(e.target.value)}
+                placeholder='What / for whom (e.g. Mail, AWB 123-4567)'
+                className='h-9'
+                maxLength={255}
               />
             )}
             <div className='flex items-end gap-2'>
@@ -246,10 +322,12 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                 />
               </label>
             </div>
-            {!crewMode && quoteError && (
-              <p className='text-destructive text-[11px]'>{(quoteError as Error).message}</p>
+            {!flightBagMode && quoteError && (
+              <p className='text-destructive text-[11px]'>
+                {(quoteError as Error).message}
+              </p>
             )}
-            {!crewMode && quote && !quoteError && (
+            {!flightBagMode && !isCharter && quote && !quoteError && (
               <p className='text-muted-foreground text-[11px]'>
                 Allowance {quote.free_allowance_kg} kg
                 {quote.excess_kg > 0 && (
@@ -309,8 +387,15 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                 )}
               </div>
             )}
-            <Button type='submit' size='sm' className='h-9 gap-1.5' disabled={add.isPending || addCrew.isPending}>
-              {add.isPending || addCrew.isPending ? (
+            <Button
+              type='submit'
+              size='sm'
+              className='h-9 gap-1.5'
+              disabled={
+                add.isPending || addCrew.isPending || addCargo.isPending
+              }
+            >
+              {add.isPending || addCrew.isPending || addCargo.isPending ? (
                 <Loader2 className='size-4 animate-spin' />
               ) : (
                 <Plus className='size-4' />
@@ -336,7 +421,13 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                       </p>
                     ))}
                     <p className='text-muted-foreground truncate'>
-                      {crewMode ? `${bag.owner} • ` : bag.rule ? `${bag.rule} • ` : ''}
+                      {flightBagMode
+                        ? `${bag.owner} • `
+                        : bag.rule
+                          ? `${bag.rule} • `
+                          : isCharter
+                            ? 'FREE • '
+                            : ''}
                       {bag.pieces} pc / {bag.weight_kg} kg
                       {bag.excess_kg > 0 && (
                         <span className='text-amber-500'> • +{bag.excess_kg} kg</span>

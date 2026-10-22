@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ServiceTypeBadge } from '@/components/service-type-badge'
 import { StatusChip } from '@/components/status-chip'
 import { useFlightActions } from '../hooks/use-dcs-actions'
 import { FlightStats } from './flight-stats'
@@ -75,6 +76,7 @@ export function FlightBar({ flight, onRefresh, isRefreshing, live = 'off', onSho
               {flight.flight_number}
             </span>
             <StatusChip value={flight.status} map={FLIGHT_STATUS} />
+            <ServiceTypeBadge type={flight.service_type} />
           </div>
           <p className='text-muted-foreground text-[11px] whitespace-nowrap'>
             {flight.aircraft.registration} • {flight.terminal ?? '—'} • Gate{' '}
