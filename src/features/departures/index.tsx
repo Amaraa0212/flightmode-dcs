@@ -4,6 +4,7 @@ import { getRouteApi } from '@tanstack/react-router'
 import { PlaneTakeoff, RotateCcw, ScanLine, Search } from 'lucide-react'
 import { dcsFlightService } from '@/services'
 import { useDebounce } from '@/hooks/use-debounce'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Main } from '@/components/layout/main'
@@ -36,7 +37,17 @@ export function Departures() {
     flights.forEach((f) => (result[f.status] = (result[f.status] ?? 0) + 1))
     return result
   }, [flights])
-  const visible = status === 'all' ? flights : flights.filter((f) => f.status === status)
+  const type = search.type
+  const typeCounts = useMemo(
+    () => ({
+      scheduled: flights.filter((f) => f.service_type !== 'charter').length,
+      charter: flights.filter((f) => f.service_type === 'charter').length,
+    }),
+    [flights]
+  )
+  const visible = flights.filter(
+    (f) => (status === 'all' || f.status === status) && (!type || f.service_type === type)
+  )
   const activeToday = flights.filter((f) => f.status !== 'cancelled').length
 
   const setStatus = (value: DepartureFilter) =>
@@ -62,7 +73,33 @@ export function Departures() {
         </span>
       </div>
 
-      <StatusFilter value={status} counts={counts} onChange={setStatus} />
+      <div className='flex flex-wrap items-center gap-3'>
+        <StatusFilter value={status} counts={counts} onChange={setStatus} />
+        {/* хуваарьт / захиалгат */}
+        <div className='bg-card ms-auto flex gap-1 rounded-xl border p-1'>
+          {([
+            [undefined, 'All types', flights.length],
+            ['scheduled', 'Scheduled', typeCounts.scheduled],
+            ['charter', 'Charter', typeCounts.charter],
+          ] as const).map(([value, label, count]) => (
+            <button
+              key={label}
+              type='button'
+              onClick={() => navigate({ search: (prev) => ({ ...prev, type: value }) })}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+                type === value
+                  ? value === 'charter'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300'
+                    : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {label} <span className='opacity-70'>{count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {isLoading ? (
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3'>

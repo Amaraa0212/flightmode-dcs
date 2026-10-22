@@ -40,7 +40,7 @@ const DEFAULT_LAYOUT: Layout = {
 type LayoutStore = Layout & {
   swap: (a: PanelId, b: PanelId) => void
   setWeights: (weights: Partial<Record<PanelId, number>>) => void
-  rotateSeats: (direction?: 1 | -1) => void
+  rotateSeats: () => void
   reset: () => void
 }
 
@@ -57,15 +57,30 @@ export const useWorkspaceLayout = create<LayoutStore>()(
           ;[order[ia], order[ib]] = [order[ib], order[ia]]
           return { order }
         }),
-      setWeights: (weights) => set((s) => ({ weights: { ...s.weights, ...weights } })),
-      rotateSeats: (direction = 1) =>
-        set((s) => ({ seatRotation: (((s.seatRotation + direction * 90) % 360) + 360) % 360 as SeatRotation })),
+      setWeights: (weights) =>
+        set((s) => ({ weights: { ...s.weights, ...weights } })),
+      // two positions only (nose up / nose left, docked under the columns) — the counter never turns it upside down
+      rotateSeats: () =>
+        set((s) => ({ seatRotation: s.seatRotation === 0 ? 270 : 0 })),
       reset: () => set(DEFAULT_LAYOUT),
     }),
     {
       name: 'dcs_workspace_layout',
-      version: 1,
-      partialize: ({ order, weights, seatRotation }) => ({ order, weights, seatRotation }),
+      version: 2,
+      partialize: ({ order, weights, seatRotation }) => ({
+        order,
+        weights,
+        seatRotation,
+      }),
+      // 90° / 180° from before the two-position switch fall back to nose up
+      migrate: (stored) => {
+        const s = stored as Partial<Layout>
+        return {
+          ...DEFAULT_LAYOUT,
+          ...s,
+          seatRotation: s.seatRotation === 270 ? 270 : 0,
+        } as Layout
+      },
     }
   )
 )

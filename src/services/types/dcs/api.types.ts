@@ -22,6 +22,7 @@ export interface ApiAirport {
 export interface ApiFlight {
   id: number
   flight_number: string
+  service_type?: 'scheduled' | 'charter'
   airline: { id: number; name: string; iata_code: string }
   aircraft: { id: number; registration: string; type: string; total_seats: number } | null
   origin: ApiAirport
@@ -74,7 +75,7 @@ export interface ApiCheckedBaggage {
   flight_id: number
   passenger_segment_id: number | null
   passenger?: { id: number; name: string; pnr: string | null } | null
-  type: 'passenger' | 'crew'
+  type: 'passenger' | 'crew' | 'cargo'
   crew_name?: string | null
   baggage_rule?: { id: number; name: string; ssr_code: string | null } | null
   pieces: number
@@ -180,6 +181,8 @@ export interface ApiBaggageRule {
 }
 
 export interface ApiBaggageRules {
+  /** charter flight: every bag free, no rules */
+  is_charter?: boolean
   rules: ApiBaggageRule[]
   prepaid_pieces: number
   excess_price_per_kg: string | null
@@ -254,6 +257,9 @@ export interface ApiBagTag {
   /** MR / MRS — null for crew bags */
   passenger_title: string | null
   is_crew: boolean
+  /** cargo / mail — printed CARGO with its description */
+  is_cargo?: boolean
+  description?: string | null
   pnr: string | null
   piece: string
   weight_kg: string

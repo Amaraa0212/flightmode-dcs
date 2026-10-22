@@ -53,6 +53,8 @@ export interface FlightStats {
 export interface DcsFlight extends Record<string, unknown> {
   id: number
   flight_number: string
+  /** charter (захиалгат): every bag free at the counter */
+  service_type: 'scheduled' | 'charter'
   airline: { name: string; iata_code: string }
   aircraft: { registration: string; type: string; total_seats: number }
   origin: DcsAirport
@@ -158,7 +160,7 @@ export interface CheckedBaggage extends Record<string, unknown> {
   id: number
   flight_id: number
   segment_id: number | null
-  type: 'passenger' | 'crew'
+  type: 'passenger' | 'crew' | 'cargo'
   crew_name: string | null
   owner: string
   pnr: string | null
@@ -195,6 +197,8 @@ export interface BaggageRule {
 }
 
 export interface BaggageRulesForSegment {
+  /** charter flight: every bag is free — no rule, limit or excess (legacy DCS) */
+  is_charter: boolean
   rules: BaggageRule[]
   prepaid_pieces: number
   excess_price_per_kg: number
@@ -204,7 +208,8 @@ export interface BaggageRulesForSegment {
 
 /** POST /dcs/segments/{id}/baggage — price / allowance are calculated by the API */
 export interface AddBaggagePayload {
-  baggage_rule_id: number
+  /** not sent on a charter flight — every bag is free there */
+  baggage_rule_id?: number
   pieces: number
   weight_kg: number
   description?: string

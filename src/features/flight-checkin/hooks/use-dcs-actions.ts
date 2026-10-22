@@ -78,6 +78,9 @@ export function usePassengerActions(options?: {
     uncheck: useDcsMutation((segmentId: number) =>
       dcsPassengerService.uncheck(segmentId)
     ),
+    holdSeat: useDcsMutation((vars: { segmentId: number; seat: string | null }) =>
+      dcsPassengerService.holdSeat(vars.segmentId, vars.seat)
+    ),
     changeSeat: useDcsMutation(
       (vars: { segmentId: number; seat: string; print?: boolean }) =>
         dcsPassengerService.changeSeat(vars.segmentId, vars.seat),
@@ -107,6 +110,13 @@ export function useBaggageActions(onDone?: () => void) {
     addCrew: useDcsMutation(
       (vars: { flightId: number; payload: AddCrewBaggagePayload }) =>
         dcsBaggageService.addCrew(vars.flightId, vars.payload),
+      accepted
+    ),
+    addCargo: useDcsMutation(
+      (vars: {
+        flightId: number
+        payload: { pieces: number; weight_kg: number; description?: string }
+      }) => dcsBaggageService.addCargo(vars.flightId, vars.payload),
       accepted
     ),
     remove: useDcsMutation(

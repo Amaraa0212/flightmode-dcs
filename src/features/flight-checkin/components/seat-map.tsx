@@ -26,6 +26,7 @@ type SeatMapProps = {
 const LEGEND = [
   { label: 'Free', className: 'border-cyan-400/50 bg-cyan-400/5' },
   { label: 'Taken', className: 'border-cyan-300 bg-cyan-400' },
+  { label: 'Held (not checked in)', className: 'border-dashed border-cyan-300 bg-cyan-400/25' },
   { label: 'Blocked', className: 'border-slate-500/40 bg-slate-500/30' },
   { label: 'Selected', className: 'border-amber-300 bg-amber-400' },
   { label: 'Exit row', className: 'border-orange-400 bg-orange-500/25' },
@@ -45,6 +46,9 @@ function stateClass(seat: Seat, isSelected: boolean, isPicked: boolean) {
   if (isSelected) return 'border-amber-300 bg-amber-400 text-[#1a1203]'
   if (seat.state === 'blocked' || seat.state === 'held' || seat.state === 'restricted')
     return 'cursor-not-allowed border-slate-500/40 bg-slate-500/25 text-slate-400'
+  // held for a booked passenger — checked in only when Enter is pressed
+  if (seat.state === 'occupied' && !seat.checked_in)
+    return 'border-dashed border-cyan-300 bg-cyan-400/25 text-cyan-700 hover:bg-cyan-400/40 dark:text-cyan-200'
   if (seat.state === 'occupied')
     return 'border-cyan-300 bg-cyan-400 text-[#04121c] hover:bg-cyan-300'
   if (seat.cabin_class === 'C')
@@ -53,9 +57,9 @@ function stateClass(seat: Seat, isSelected: boolean, isPicked: boolean) {
 }
 
 /**
- * Legacy DCS flow: click a free seat to pick it for the selected passenger, then press Enter —
- * the passenger is checked in (or moved) to that seat and the boarding pass prints through QZ Tray.
- * Enter without a picked seat: auto seat for a booked passenger, reprint for a checked-in one. Esc drops the pick.
+ * Booked passenger: a click on a free seat saves it for them right away (held, dashed — not checked in);
+ * clicking it again gives it back. Enter checks them in on the held seat (or an auto seat) and prints through QZ Tray.
+ * Checked-in passenger: a click picks a new seat and Enter moves them there; Enter alone reprints. Esc drops the pick.
  * While a passenger is selected, seat clicks only choose a seat for them; a taken seat is refused and never
  * switches the passenger. With nobody selected, a taken seat opens its passenger.
  */
@@ -68,7 +72,7 @@ export function SeatMapView({
 }: SeatMapProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const [pick, setPick] = useState<{ segmentId: number; seat: Seat } | null>(null)
-  const { checkIn, changeSeat } = usePassengerActions()
+  const { checkIn, changeSeat, holdSeat } = usePassengerActions()
   const flashes = useSeatFlash((s) => s.seats)
   const rotation = useWorkspaceLayout((s) => s.seatRotation)
   const rotateSeats = useWorkspaceLayout((s) => s.rotateSeats)
@@ -80,7 +84,7 @@ export function SeatMapView({
 
   // a pick belongs to one passenger — selecting someone else drops it
   const picked = pick && pick.segmentId === selected?.id ? pick.seat : null
-  const busy = checkIn.isPending || changeSeat.isPending
+  const busy = checkIn.isPending || changeSeat.isPending || holdSeat.isPending
 
   const canAssign =
     !!selected &&
@@ -96,7 +100,11 @@ export function SeatMapView({
     }
 
     // a passenger is selected: clicks only choose a seat for them — never switch passenger (legacy selectPassSeat)
-    if (seat.segment_id === selected.id) return setPick(null)
+    if (seat.segment_id === selected.id) {
+      // a booked passenger's own held seat: click again to give it back
+      if (selected.status === 'booked' && canAssign && !busy) holdSeat.mutate({ segmentId: selected.id, seat: null })
+      return setPick(null)
+    }
     if (seat.segment_id || seat.state !== 'available') {
       return toast.warning(
         `Seat ${seat.number} is not available${seat.occupant_name ? ` — ${seat.occupant_name}` : ''}`,
@@ -104,7 +112,12 @@ export function SeatMapView({
       )
     }
     if (canAssign) {
-      setPick({ segmentId: selected.id, seat })
+      // booked: the seat is saved for the passenger now (no check-in); Enter checks them in on it
+      if (selected.status === 'booked') {
+        if (!busy) holdSeat.mutate({ segmentId: selected.id, seat: seat.number })
+      } else {
+        setPick({ segmentId: selected.id, seat })
+      }
       sectionRef.current?.focus()
       return
     }
@@ -118,8 +131,9 @@ export function SeatMapView({
     if (!selected || selected.type === 'INF') return null
     if (selected.status === 'booked' && checkinOpen)
       return {
-        label: picked ? `Check in ${picked.number} & print` : 'Check in (auto seat) & print',
-        run: () => checkIn.mutate({ segmentId: selected.id, seat: picked?.number, print: true }),
+        // no seat sent: the API checks in on the held seat, or picks one
+        label: selected.seat_number ? `Check in ${selected.seat_number} & print` : 'Check in (auto seat) & print',
+        run: () => checkIn.mutate({ segmentId: selected.id, print: true }),
       }
     if (selected.status === 'checked_in' && picked && checkinOpen)
       return {
@@ -244,9 +258,8 @@ export function SeatMapView({
             variant='outline'
             size='sm'
             className='h-7 gap-1 px-2 font-mono text-[11px]'
-            // click: clockwise · shift+click: counter-clockwise
-            onClick={(e) => rotateSeats(e.shiftKey ? -1 : 1)}
-            title='Rotate seat map 90° (shift+click: other way)'
+            onClick={() => rotateSeats()}
+            title='Seat map: nose up (0°) or nose left (270°)'
             aria-label='Rotate seat map'
           >
             <RotateCw className='size-3.5' />
