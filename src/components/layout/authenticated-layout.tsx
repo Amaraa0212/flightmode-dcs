@@ -10,6 +10,7 @@ import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AnnouncementBell, RequiredAnnouncementsModal } from '@/components/announcements'
 import { ConfigDrawer } from '@/components/config-drawer'
+import { TwoFactorSetupPrompt } from '@/components/two-factor'
 import { PageHelp } from '@/components/page-help/page-help'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
@@ -66,7 +67,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
                 </div>
               </Header>
               {children ?? <Outlet />}
-              <RequiredAnnouncementsModal />
+              <RequiredAnnouncementsModal then={<TwoFactorSetupPrompt />} />
             </SidebarInset>
           </SidebarProvider>
         </DrawerProvider>

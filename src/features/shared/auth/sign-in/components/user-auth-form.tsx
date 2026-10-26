@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { authService } from '@/services'
 import {
   ArrowRight,
   Eye,
@@ -14,7 +15,6 @@ import {
   UserRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { authService } from '@/services'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import {
@@ -24,6 +24,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
+import { TwoFactorLoginStep } from '@/components/two-factor'
 
 const formSchema = z.object({
   email: z.string().trim().min(3, 'Enter your staff ID or operational email'),
@@ -49,6 +50,8 @@ export function UserAuthForm({ className, redirectTo }: UserAuthFormProps) {
   const navigate = useNavigate()
   const { auth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
+  // Google Authenticator on: password accepted, waiting for the 6-digit code
+  const [challenge, setChallenge] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,14 +61,33 @@ export function UserAuthForm({ className, redirectTo }: UserAuthFormProps) {
   const loginMutation = useMutation({
     mutationFn: (data: FormValues) => authService.login(data),
     onSuccess: (res) => {
-      if (res.body) auth.setSession(res.body.token, res.body.user)
-      navigate({ to: redirectTo || '/', replace: true })
-      toast.success('Амжилттай нэвтэрлээ')
+      if (!res.body) return
+      if ('two_factor_required' in res.body) {
+        setChallenge(res.body.challenge)
+        return
+      }
+      auth.setSession(res.body.token, res.body.user)
+      signedIn()
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Алдаа гарлаа')
     },
   })
+
+  function signedIn() {
+    navigate({ to: redirectTo || '/', replace: true })
+    toast.success('Амжилттай нэвтэрлээ')
+  }
+
+  if (challenge) {
+    return (
+      <TwoFactorLoginStep
+        challenge={challenge}
+        onBack={() => setChallenge(null)}
+        onSignedIn={signedIn}
+      />
+    )
+  }
 
   return (
     <Form {...form}>
@@ -114,7 +136,9 @@ export function UserAuthForm({ className, redirectTo }: UserAuthFormProps) {
                 <button
                   type='button'
                   onClick={() =>
-                    toast.info('Contact your station supervisor to reset the token.')
+                    toast.info(
+                      'Contact your station supervisor to reset the token.'
+                    )
                   }
                   className='text-brand text-xs font-medium hover:underline'
                 >
@@ -129,14 +153,19 @@ export function UserAuthForm({ className, redirectTo }: UserAuthFormProps) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete='current-password'
                     placeholder='••••••••••'
-                    className={cn(inputClass, !showPassword && 'tracking-widest')}
+                    className={cn(
+                      inputClass,
+                      !showPassword && 'tracking-widest'
+                    )}
                     {...field}
                   />
                   <button
                     type='button'
                     onClick={() => setShowPassword((v) => !v)}
                     className='text-muted-foreground hover:text-foreground'
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className='size-5' />
@@ -172,7 +201,7 @@ export function UserAuthForm({ className, redirectTo }: UserAuthFormProps) {
           <button
             type='button'
             onClick={() => toast.info('Badge scan is not connected yet.')}
-            className='bg-card/70 text-brand hover:border-cyan-400/50 flex size-14 items-center justify-center rounded-2xl border backdrop-blur transition'
+            className='bg-card/70 text-brand flex size-14 items-center justify-center rounded-2xl border backdrop-blur transition hover:border-cyan-400/50'
             aria-label='Scan staff badge'
           >
             <ScanFace className='size-6' />
