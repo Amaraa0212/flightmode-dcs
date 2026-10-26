@@ -108,6 +108,8 @@ export function FlightCheckin() {
         tab: value === 'passengers' ? undefined : value,
       }),
     })
+  // a bag in the baggage view → its owner selected, passenger view (baggage filters dropped)
+  const selectBagOwner = (segmentId: number) => navigate({ search: { pax: segmentId } })
 
   // ─── keyboard commands owned by the page (the panels register their own) ───
   useShortcutKeys()
@@ -178,6 +180,7 @@ export function FlightCheckin() {
               navigate={tableNavigate}
               selectedId={search.pax}
               onSelect={selectPassenger}
+              onSelectBagOwner={selectBagOwner}
             />
           ),
           info: (

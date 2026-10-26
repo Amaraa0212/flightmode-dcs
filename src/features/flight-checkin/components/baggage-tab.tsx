@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
-import { dcsBaggageService, type CheckedBaggage } from '@/services'
+import { dcsBaggageService } from '@/services'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
 import { useFilterParams } from '@/hooks/use-filter-params'
 import { Button } from '@/components/ui/button'
 import { BaseTable } from '@/components/data-table'
-import { createBaggageColumns } from './baggage-columns'
+import { type BaggageRow, createBaggageColumns, toBaggageRows } from './baggage-columns'
 import { BaggageDeleteDialog, CrewBaggageDialog } from './baggage-dialogs'
 import { BAGGAGE_TYPE_OPTIONS, QUERY_KEYS, TABLE_CONFIG } from './constants'
 
@@ -15,9 +15,11 @@ type BaggageTabProps = {
   search: Record<string, unknown>
   navigate: NavigateFn
   canEdit: boolean
+  /** a passenger bag clicked: open its owner (crew / cargo bags have no segment) */
+  onSelectOwner: (segmentId: number) => void
 }
 
-export function BaggageTab({ flightId, search, navigate, canEdit }: BaggageTabProps) {
+export function BaggageTab({ flightId, search, navigate, canEdit, onSelectOwner }: BaggageTabProps) {
   const [crewOpen, setCrewOpen] = useState(false)
   const columns = useMemo(() => createBaggageColumns(), [])
 
@@ -38,12 +40,14 @@ export function BaggageTab({ flightId, search, navigate, canEdit }: BaggageTabPr
       return { items: res.body?.items ?? [], total: res.body?.total ?? 0 }
     },
   })
+  const rows = useMemo(() => toBaggageRows(data?.items ?? []), [data])
 
   return (
     <>
-      <BaseTable<CheckedBaggage>
-        data={data?.items ?? []}
-        total={data?.total}
+      <BaseTable<BaggageRow>
+        data={rows}
+        total={rows.length}
+        rowKey='row_key'
         columns={columns}
         search={search}
         navigate={navigate}
@@ -53,6 +57,8 @@ export function BaggageTab({ flightId, search, navigate, canEdit }: BaggageTabPr
         enableRowSelection={false}
         DeleteComponent={canEdit ? BaggageDeleteDialog : undefined}
         hideAction={!canEdit}
+        onRowClick={(bag) => bag.segment_id && onSelectOwner(bag.segment_id)}
+        rowClassName={(bag) => (bag.segment_id ? 'cursor-pointer' : 'cursor-default')}
         tableConfig={{
           pagination: {
             defaultPage: TABLE_CONFIG.DEFAULT_PAGE,

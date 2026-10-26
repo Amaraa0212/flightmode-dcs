@@ -19,6 +19,8 @@ type PassengerListPanelProps = {
   navigate: NavigateFn
   selectedId?: number
   onSelect: (passenger: DcsPassenger) => void
+  /** baggage view → the bag owner's passenger, back in the passenger view */
+  onSelectBagOwner: (segmentId: number) => void
 }
 
 const VIEWS = [
@@ -42,6 +44,7 @@ export function PassengerListPanel({
   navigate,
   selectedId,
   onSelect,
+  onSelectBagOwner,
 }: PassengerListPanelProps) {
   const { stats } = flight
 
@@ -98,6 +101,7 @@ export function PassengerListPanel({
             search={search}
             navigate={navigate}
             canEdit={flight.status === 'checkin_open'}
+            onSelectOwner={onSelectBagOwner}
           />
         )}
       </div>

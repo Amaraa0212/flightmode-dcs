@@ -338,38 +338,41 @@ export function BaseTable<TData extends Record<string, unknown>>({
           {
             id: 'actions',
             header: '',
+            // the row's own onRowClick must not fire from its action buttons (or their portalled menu)
             cell: ({ row }) => (
-              <RowActions
-                record={row.original}
-                onEdit={
-                  UpdateComponent || onUpdate
-                    ? () => {
-                        setUpdateRecord(row.original)
-                        onUpdate?.(row.original)
-                      }
-                    : undefined
-                }
-                onDelete={
-                  DeleteComponent || onDelete
-                    ? () => {
-                        setDeleteRecord(row.original)
-                        onDelete?.(row.original)
-                      }
-                    : undefined
-                }
-                onDetail={
-                  DetailComponent || onDetail
-                    ? () => {
-                        setDetailRecord(row.original)
-                        onDetail?.(row.original)
-                      }
-                    : undefined
-                }
-                hideEditButton={hideEditButton}
-                hideDeleteButton={hideDeleteButton}
-                showDetailButton={showDetailButton}
-                customActions={customActions}
-              />
+              <div onClick={(e) => e.stopPropagation()}>
+                <RowActions
+                  record={row.original}
+                  onEdit={
+                    UpdateComponent || onUpdate
+                      ? () => {
+                          setUpdateRecord(row.original)
+                          onUpdate?.(row.original)
+                        }
+                      : undefined
+                  }
+                  onDelete={
+                    DeleteComponent || onDelete
+                      ? () => {
+                          setDeleteRecord(row.original)
+                          onDelete?.(row.original)
+                        }
+                      : undefined
+                  }
+                  onDetail={
+                    DetailComponent || onDetail
+                      ? () => {
+                          setDetailRecord(row.original)
+                          onDetail?.(row.original)
+                        }
+                      : undefined
+                  }
+                  hideEditButton={hideEditButton}
+                  hideDeleteButton={hideDeleteButton}
+                  showDetailButton={showDetailButton}
+                  customActions={customActions}
+                />
+              </div>
             ),
             enableSorting: false,
             enableHiding: false,
