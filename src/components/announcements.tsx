@@ -98,9 +98,12 @@ export function AnnouncementBell() {
   )
 }
 
-/** Legacy RequiredNotificationModal: required announcements are confirmed once per session */
-export function RequiredAnnouncementsModal() {
-  const { data = [] } = useAnnouncements()
+/**
+ * Legacy RequiredNotificationModal: required announcements are confirmed once per session.
+ * `then` (another prompt) opens only after they are confirmed, so two modals never stack.
+ */
+export function RequiredAnnouncementsModal({ then }: { then?: React.ReactNode }) {
+  const { data = [], isFetched } = useAnnouncements()
   const [acknowledged, setAcknowledged] = useState<number[]>(readAcknowledged)
   const pending = data.filter((a) => a.requires_acknowledgement && !acknowledged.includes(a.id))
 
@@ -113,6 +116,8 @@ export function RequiredAnnouncementsModal() {
     }
     setAcknowledged(next)
   }
+
+  if (isFetched && pending.length === 0) return then ?? null
 
   return (
     <Dialog open={pending.length > 0}>
