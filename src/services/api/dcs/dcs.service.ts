@@ -17,6 +17,7 @@ import type {
 import type {
   AddBaggagePayload,
   AddCrewBaggagePayload,
+  AddRushBagPayload,
   Announcement,
   BaggageQuote,
   DcsFlightListParams,
@@ -286,6 +287,16 @@ export const dcsBaggageService = {
     action(
       client.post<ApiAction<ApiCheckedBaggage>>(
         `/dcs/flights/${flightId}/cargo`,
+        payload
+      ),
+      toBaggage
+    ),
+
+  /** Rush: a late bag sent on this flight, own RUSH tags */
+  addRush: (flightId: number, payload: AddRushBagPayload) =>
+    action(
+      client.post<ApiAction<ApiCheckedBaggage>>(
+        `/dcs/flights/${flightId}/rush`,
         payload
       ),
       toBaggage

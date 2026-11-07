@@ -12,7 +12,7 @@ export function ServiceTypeBadge({ type, className }: { type: 'scheduled' | 'cha
           : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
         className
       )}
-      title={charter ? 'Charter (захиалгат) — every bag is free' : 'Scheduled (хуваарьт)'}
+      title={charter ? 'Charter (захиалгат)' : 'Scheduled (хуваарьт)'}
     >
       {charter ? 'Charter' : 'Scheduled'}
     </span>

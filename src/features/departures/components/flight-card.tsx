@@ -77,7 +77,7 @@ export function FlightCard({ flight }: { flight: DcsFlight }) {
           <p className='text-3xl font-bold tracking-tight'>{flight.origin.iata_code}</p>
           <p className='text-muted-foreground text-sm'>{flight.origin.city}</p>
           <p className={cn('mt-1 font-semibold', highlighted ? 'text-brand' : 'text-foreground')}>
-            {flight.departure_time}
+            {flight.departure_date} {flight.departure_time}
           </p>
         </div>
         <div className='flex flex-col items-center gap-1 px-2'>

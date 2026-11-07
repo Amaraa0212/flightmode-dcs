@@ -91,7 +91,9 @@ export function FlightBar({ flight, onRefresh, isRefreshing, live = 'off', onSho
       <div className='flex shrink-0 items-center gap-3' title={flight.airline.name}>
         <div>
           <p className='text-xl leading-none font-bold'>{flight.origin.iata_code}</p>
-          <p className='text-brand text-xs font-semibold'>{flight.departure_time}</p>
+          <p className='text-brand text-xs font-semibold whitespace-nowrap'>
+            {flight.departure_date} {flight.departure_time}
+          </p>
         </div>
         <div className='flex flex-col items-center'>
           <span className='text-muted-foreground text-[10px]'>

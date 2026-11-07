@@ -63,6 +63,8 @@ export interface DcsFlight extends Record<string, unknown> {
   scheduled_arrival_at: string
   estimated_departure_at: string | null
   /** Station local "HH:mm" (API *_local) */
+  /** local to the origin: YYYY-MM-DD */
+  departure_date: string
   departure_time: string
   arrival_time: string
   /** Arrival on a later local calendar day */
@@ -160,7 +162,7 @@ export interface CheckedBaggage extends Record<string, unknown> {
   id: number
   flight_id: number
   segment_id: number | null
-  type: 'passenger' | 'crew' | 'cargo'
+  type: 'passenger' | 'crew' | 'cargo' | 'rush'
   crew_name: string | null
   owner: string
   pnr: string | null
@@ -197,8 +199,8 @@ export interface BaggageRule {
 }
 
 export interface BaggageRulesForSegment {
-  /** charter flight: every bag is free — no rule, limit or excess (legacy DCS) */
-  is_charter: boolean
+  /** charter marked "No baggage rule": every bag is free — no rule, limit or excess */
+  no_baggage_rule: boolean
   rules: BaggageRule[]
   prepaid_pieces: number
   excess_price_per_kg: number
@@ -229,6 +231,15 @@ export interface BaggageQuote {
   excess_price_per_kg: number
   remaining_allowance_kg: number | null
   currency: string
+}
+
+/** POST /dcs/flights/{id}/rush */
+export interface AddRushBagPayload {
+  passenger_name: string
+  original_flight: string
+  phone: string
+  pieces: number
+  weight_kg: number
 }
 
 /** POST /dcs/flights/{id}/crew-baggage */

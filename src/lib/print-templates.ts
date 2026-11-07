@@ -167,8 +167,34 @@ const BAG_TAG_CSS = `
   .endsection { height: 5.3cm; display: flex; margin-top: 1cm; margin-bottom: -0.2cm; flex-direction: column; justify-content: end; }
 `
 
+/** Late bag sent on this flight: who it belongs to, this flight and the flight it missed */
+function rushTagDocument(t: BagTag, barcode: string) {
+  const field = (label: string, value: unknown) =>
+    `<div style="margin-top:0.25cm;"><div class="fs-s bold">${e(label)}</div><div class="fs-n">${e(value || '-')}</div></div>`
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Rush tag ${e(t.tag_number)}</title>
+<style>${BAG_TAG_CSS}</style></head><body>
+<div class="container${t.airline.bag_tag_rotation === 180 ? ' r180' : ''}" style="padding:0.3cm;box-sizing:border-box;">
+  ${logo(t.airline.logo_url, t.airline.name, 'logo-img')}
+  <div class="fs-b bold" style="margin-top:0.3cm;">RUSH BAG</div>
+  <div class="fs-b bold">${e(t.origin)} → ${e(t.destination.code)}</div>
+  <hr>
+  ${field('PASSENGER', t.passenger)}
+  ${field('PHONE', t.phone)}
+  ${field('FORWARDING FLIGHT', `${t.flight_number} / ${t.date.toUpperCase()}`)}
+  ${field('ORIGINAL FLIGHT', t.original_flight)}
+  ${field('BAGGAGE TAG NO.', t.tag_number)}
+  ${field('PIECE / WEIGHT', `${t.piece} · ${t.weight_kg} kg`)}
+  <div class="center bold" style="margin-top:0.4cm;font-size:32pt;border:2px solid #000;padding:0.2cm 0;">RUSH</div>
+  <div class="center" style="margin-top:0.4cm;"><img src="${barcode}" alt="" style="width:4.3cm;height:1.5cm;"></div>
+  <div class="center fs-n bold">${e(t.tag_number)}</div>
+</div>
+</body></html>`
+}
+
 export function bagTagDocument(t: BagTag) {
   const barcode = code128Png(t.barcode)
+  if (t.is_rush) return rushTagDocument(t, barcode)
   const plate = `${t.airline.iata_code} ${t.tag_number.slice(-6)}`
   const name =
     t.is_crew || t.is_cargo
@@ -209,7 +235,7 @@ export function bagTagDocument(t: BagTag) {
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Bag tag ${e(t.tag_number)}</title>
 <style>${BAG_TAG_CSS}</style></head><body>
-<div class="container">
+<div class="container${t.airline.bag_tag_rotation === 180 ? ' r180' : ''}">
   <div class="c1">
     <div class="c1-1">${logo(t.airline.logo_url, t.airline.name, 'logo-img')}</div>
     <div class="c1-2"><img src="${barcode}" alt="" style="width:4cm;height:0.9cm;"></div>

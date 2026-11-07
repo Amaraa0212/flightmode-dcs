@@ -6,6 +6,7 @@ import { dcsSeatMapService, type DcsPassenger, type Seat } from '@/services'
 import { cn } from '@/lib/utils'
 import { passengerName } from '@/lib/flight'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSeatFlash } from '@/hooks/use-flight-channel'
 import { printBoardingPass, usePassengerActions } from '../hooks/use-dcs-actions'
@@ -85,6 +86,8 @@ export function SeatMapView({
   // a pick belongs to one passenger — selecting someone else drops it
   const picked = pick && pick.segmentId === selected?.id ? pick.seat : null
   const busy = checkIn.isPending || changeSeat.isPending || holdSeat.isPending
+  // a checked-in passenger's seat changes only after the agent confirms it
+  const [moveTo, setMoveTo] = useState<string | null>(null)
 
   const canAssign =
     !!selected &&
@@ -138,7 +141,7 @@ export function SeatMapView({
     if (selected.status === 'checked_in' && picked && checkinOpen)
       return {
         label: `Move to ${picked.number} & print`,
-        run: () => changeSeat.mutate({ segmentId: selected.id, seat: picked.number, print: true }),
+        run: () => setMoveTo(picked.number),
       }
     if (selected.status === 'checked_in' || selected.status === 'boarded')
       return { label: 'Print boarding pass', run: () => void printBoardingPass(selected.id) }
@@ -285,6 +288,19 @@ export function SeatMapView({
           {actionBar}
         </>
       )}
+      <ConfirmDialog
+        open={!!moveTo && !!selected}
+        onOpenChange={(open) => !open && setMoveTo(null)}
+        title='Суудал солих уу?'
+        desc={selected ? `${passengerName(selected)}: ${selected.seat_number ?? '—'} → ${moveTo}. Итгэлтэй байна уу?` : ''}
+        confirmText='Солих'
+        cancelBtnText='Болих'
+        isLoading={changeSeat.isPending}
+        handleConfirm={() => {
+          if (selected && moveTo) changeSeat.mutate({ segmentId: selected.id, seat: moveTo, print: true })
+          setMoveTo(null)
+        }}
+      />
     </section>
   )
 }
