@@ -248,7 +248,8 @@ export interface ApiBaggageQuote {
 export interface ApiBagTag {
   tag_number: string
   barcode: string
-  airline: { name: string; iata_code: string; logo_url: string | null; layout: unknown }
+  /** bag_tag_rotation: the direction the airline's tags print in, 0 or 180 degrees */
+  airline: { name: string; iata_code: string; logo_url: string | null; layout: unknown; bag_tag_rotation?: number }
   flight_number: string
   date: string
   origin: string

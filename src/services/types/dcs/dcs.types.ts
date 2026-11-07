@@ -63,6 +63,8 @@ export interface DcsFlight extends Record<string, unknown> {
   scheduled_arrival_at: string
   estimated_departure_at: string | null
   /** Station local "HH:mm" (API *_local) */
+  /** local to the origin: YYYY-MM-DD */
+  departure_date: string
   departure_time: string
   arrival_time: string
   /** Arrival on a later local calendar day */

@@ -75,6 +75,7 @@ export function toFlight(api: ApiFlight, statistics?: ApiFlightStatistics): DcsF
     scheduled_departure_at: api.scheduled_departure_at,
     scheduled_arrival_at: api.scheduled_arrival_at,
     estimated_departure_at: api.estimated_departure_at,
+    departure_date: (departureLocal ?? api.scheduled_departure_at).slice(0, 10),
     departure_time: localTime(departureLocal, api.scheduled_departure_at),
     arrival_time: localTime(api.scheduled_arrival_local, api.scheduled_arrival_at),
     arrives_next_day:

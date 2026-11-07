@@ -209,7 +209,7 @@ export function bagTagDocument(t: BagTag) {
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Bag tag ${e(t.tag_number)}</title>
 <style>${BAG_TAG_CSS}</style></head><body>
-<div class="container">
+<div class="container${t.airline.bag_tag_rotation === 180 ? ' r180' : ''}">
   <div class="c1">
     <div class="c1-1">${logo(t.airline.logo_url, t.airline.name, 'logo-img')}</div>
     <div class="c1-2"><img src="${barcode}" alt="" style="width:4cm;height:0.9cm;"></div>
