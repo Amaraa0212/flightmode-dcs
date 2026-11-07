@@ -167,41 +167,18 @@ const BAG_TAG_CSS = `
   .endsection { height: 5.3cm; display: flex; margin-top: 1cm; margin-bottom: -0.2cm; flex-direction: column; justify-content: end; }
 `
 
-/** Late bag sent on this flight: who it belongs to, this flight and the flight it missed */
-function rushTagDocument(t: BagTag, barcode: string) {
-  const field = (label: string, value: unknown) =>
-    `<div style="margin-top:0.25cm;"><div class="fs-s bold">${e(label)}</div><div class="fs-n">${e(value || '-')}</div></div>`
-
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Rush tag ${e(t.tag_number)}</title>
-<style>${BAG_TAG_CSS}</style></head><body>
-<div class="container${t.airline.bag_tag_rotation === 180 ? ' r180' : ''}" style="padding:0.3cm;box-sizing:border-box;">
-  ${logo(t.airline.logo_url, t.airline.name, 'logo-img')}
-  <div class="fs-b bold" style="margin-top:0.3cm;">RUSH BAG</div>
-  <div class="fs-b bold">${e(t.origin)} → ${e(t.destination.code)}</div>
-  <hr>
-  ${field('PASSENGER', t.passenger)}
-  ${field('PHONE', t.phone)}
-  ${field('FORWARDING FLIGHT', `${t.flight_number} / ${t.date.toUpperCase()}`)}
-  ${field('ORIGINAL FLIGHT', t.original_flight)}
-  ${field('BAGGAGE TAG NO.', t.tag_number)}
-  ${field('PIECE / WEIGHT', `${t.piece} · ${t.weight_kg} kg`)}
-  <div class="center bold" style="margin-top:0.4cm;font-size:32pt;border:2px solid #000;padding:0.2cm 0;">RUSH</div>
-  <div class="center" style="margin-top:0.4cm;"><img src="${barcode}" alt="" style="width:4.3cm;height:1.5cm;"></div>
-  <div class="center fs-n bold">${e(t.tag_number)}</div>
-</div>
-</body></html>`
-}
-
 export function bagTagDocument(t: BagTag) {
   const barcode = code128Png(t.barcode)
-  if (t.is_rush) return rushTagDocument(t, barcode)
   const plate = `${t.airline.iata_code} ${t.tag_number.slice(-6)}`
   const name =
-    t.is_crew || t.is_cargo
+    t.is_crew || t.is_cargo || t.is_rush
       ? t.passenger
       : `${t.passenger} ${t.passenger_title ?? ''}`.trim()
   const destName = t.destination.name.toUpperCase()
-  const crew = t.is_cargo
+  // a late bag: the standard tag, marked RUSH with the flight it missed
+  const crew = t.is_rush
+    ? `# RUSH ${e(t.original_flight ?? '').toUpperCase()}`
+    : t.is_cargo
     ? `# CARGO${t.description ? ` ${e(t.description).toUpperCase()}` : ''}`
     : t.is_crew
       ? '# CREW BAG'
@@ -252,19 +229,19 @@ export function bagTagDocument(t: BagTag) {
     <div class="c2-1"><div class="r180">${bigBarcodes}
       <div class="center" style="margin-top:4px;"><span class="spaced fs-n bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
     </div></div>
-    <div class="c2-addi r180"><div class="row-1"><div class="col-1"><span class="fs-m xlight">${crew}</span></div></div></div>
+    <div class="c2-addi r180"><div class="row-1"><div class="col-1"><span class="fs-m ${t.is_rush ? 'bold' : 'xlight'}">${crew}</span></div></div></div>
     <hr>
     ${via(true)}${via(true)}${to(true)}
     <div class="c2-3">
       <div class="c2-3-1">${logo(t.airline.logo_url, t.airline.name, 'logo-img')}</div>
       <div>
         <div class="even center"><span class="fs-s light">${e(name)}</span></div>
-        <div class="even center"><span class="fs-s light">${e(t.origin)} / ${e(date)}</span><span class="fs-s light">${e(t.pnr ?? '')}</span></div>
+        <div class="even center"><span class="fs-s light">${e(t.origin)} / ${e(date)}</span><span class="fs-s light">${e((t.is_rush ? t.phone : t.pnr) ?? '')}</span></div>
       </div>
     </div>
     <hr>
     ${to(false)}${via(false)}${via(false)}
-    <div class="c2-addi"><div class="row-1"><div class="col-1"><span class="fs-m xlight">${crew}</span></div></div></div>
+    <div class="c2-addi"><div class="row-1"><div class="col-1"><span class="fs-m ${t.is_rush ? 'bold' : 'xlight'}">${crew}</span></div></div></div>
     <div class="c2-4">${bigBarcodes}
       <div class="center" style="margin-top:5px;"><span class="spaced fs-n bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
     </div>
