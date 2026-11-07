@@ -9,6 +9,7 @@ import {
   dcsPassengerService,
   type AddBaggagePayload,
   type AddCrewBaggagePayload,
+  type AddRushBagPayload,
   type CheckedBaggage,
   type GoShowPayload,
   type PassengerPayload,
@@ -117,6 +118,11 @@ export function useBaggageActions(onDone?: () => void) {
         flightId: number
         payload: { pieces: number; weight_kg: number; description?: string }
       }) => dcsBaggageService.addCargo(vars.flightId, vars.payload),
+      accepted
+    ),
+    addRush: useDcsMutation(
+      (vars: { flightId: number; payload: AddRushBagPayload }) =>
+        dcsBaggageService.addRush(vars.flightId, vars.payload),
       accepted
     ),
     remove: useDcsMutation(

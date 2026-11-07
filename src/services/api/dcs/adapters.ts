@@ -132,7 +132,9 @@ export function toBaggage(api: ApiCheckedBaggage): CheckedBaggage {
         ? (api.crew_name ?? api.description ?? 'CREW')
         : api.type === 'cargo'
           ? `CARGO${api.description ? ` · ${api.description}` : ''}`
-          : (who?.name ?? '—'),
+          : api.type === 'rush'
+            ? `RUSH · ${api.rush_passenger_name ?? ''} · ${api.rush_original_flight ?? ''}`
+            : (who?.name ?? '—'),
     pnr: who?.pnr ?? null,
     rule: api.baggage_rule?.name ?? null,
     pieces: api.pieces,
@@ -226,7 +228,7 @@ export function toRule(api: ApiBaggageRule): BaggageRule {
 
 export function toRulesForSegment(api: ApiBaggageRules): BaggageRulesForSegment {
   return {
-    is_charter: !!api.is_charter,
+    no_baggage_rule: !!api.no_baggage_rule,
     rules: api.rules.map(toRule),
     prepaid_pieces: api.prepaid_pieces,
     excess_price_per_kg: num(api.excess_price_per_kg),

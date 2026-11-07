@@ -75,8 +75,10 @@ export interface ApiCheckedBaggage {
   flight_id: number
   passenger_segment_id: number | null
   passenger?: { id: number; name: string; pnr: string | null } | null
-  type: 'passenger' | 'crew' | 'cargo'
+  type: 'passenger' | 'crew' | 'cargo' | 'rush'
   crew_name?: string | null
+  rush_passenger_name?: string | null
+  rush_original_flight?: string | null
   baggage_rule?: { id: number; name: string; ssr_code: string | null } | null
   pieces: number
   weight_kg: string
@@ -181,8 +183,8 @@ export interface ApiBaggageRule {
 }
 
 export interface ApiBaggageRules {
-  /** charter flight: every bag free, no rules */
-  is_charter?: boolean
+  /** charter marked "No baggage rule": every bag free, no rules */
+  no_baggage_rule?: boolean
   rules: ApiBaggageRule[]
   prepaid_pieces: number
   excess_price_per_kg: string | null
@@ -260,6 +262,10 @@ export interface ApiBagTag {
   is_crew: boolean
   /** cargo / mail — printed CARGO with its description */
   is_cargo?: boolean
+  /** late bag sent on this flight: typed name, original flight and phone */
+  is_rush?: boolean
+  original_flight?: string | null
+  phone?: string | null
   description?: string | null
   pnr: string | null
   piece: string
