@@ -1,7 +1,7 @@
 import { useSearch } from '@tanstack/react-router'
 import { APP } from '@/config/app'
 import { useStation } from '@/hooks/use-station'
-import { LogoImage, Wordmark } from '@/components/layout/logo-image'
+import { Wordmark } from '@/components/layout/logo-image'
 import { StationClock } from '@/components/station-clock'
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from './components/user-auth-form'
@@ -34,11 +34,6 @@ export function SignIn() {
   return (
     <AuthLayout footer={<Footer />}>
       <div className='mb-10 flex flex-col items-center text-center'>
-        <div className='relative mb-6 flex size-40 items-center justify-center rounded-full border border-cyan-400/15 bg-cyan-400/[0.03]'>
-          <div className='fm-glow size-24 rounded-[28%]'>
-            <LogoImage />
-          </div>
-        </div>
         <Wordmark className='text-5xl' />
         <p className='text-muted-foreground mt-3 text-xs font-medium tracking-[0.2em] uppercase sm:text-sm'>
           Check-in counter • Airport ops
