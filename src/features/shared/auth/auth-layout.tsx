@@ -29,7 +29,7 @@ export function AuthLayout({ children, footer }: AuthLayoutProps) {
         </div>
         <div className='inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-2 text-xs font-medium text-indigo-700 dark:text-indigo-200 backdrop-blur sm:text-sm'>
           <Building2 className='size-4' />
-          Check-in counter • T1
+          Departure Control System
         </div>
       </header>
 

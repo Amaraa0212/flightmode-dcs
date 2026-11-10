@@ -54,7 +54,7 @@ function Item({ a, onDismiss }: { a: Announcement; onDismiss?: () => void }) {
       </div>
       <p className='text-muted-foreground text-xs whitespace-pre-line'>{a.body}</p>
       <p className='text-muted-foreground text-[10px]'>
-        {a.airline ?? 'FlightMode'} · {formatDate(a.created_at, 'YYYY-MM-DD HH:mm')}
+        {a.airline ?? 'Skythium'} · {formatDate(a.created_at, 'YYYY-MM-DD HH:mm')}
       </p>
     </div>
   )
