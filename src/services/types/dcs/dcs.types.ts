@@ -74,7 +74,6 @@ export interface DcsFlight extends Record<string, unknown> {
   gate: string | null
   status: FlightStatus
   status_reason: string | null
-  excess_price_per_kg: number
   /** Departures board counts (list) or statistics (detail) */
   stats: FlightStats
 }
@@ -171,6 +170,8 @@ export interface CheckedBaggage extends Record<string, unknown> {
   weight_kg: number
   free_allowance_kg: number
   excess_kg: number
+  /** PC rule: pieces over the free ones */
+  excess_pieces: number
   excess_price: number
   price: number
   /** billing / transaction number of the excess payment */
@@ -203,8 +204,9 @@ export interface BaggageRulesForSegment {
   no_baggage_rule: boolean
   rules: BaggageRule[]
   prepaid_pieces: number
+  /** from the flight's EBAG rules: an extra piece (PC rule), an excess kg; 0 = free */
+  excess_price_per_piece: number
   excess_price_per_kg: number
-  excess_max_kg: number | null
   accepted: CheckedBaggage[]
 }
 
@@ -226,9 +228,12 @@ export interface AddBaggagePayload {
 export interface BaggageQuote {
   free_allowance_kg: number
   excess_kg: number
+  /** PC rule: pieces over the free ones (priced per piece) */
+  excess_pieces: number
   excess_price: number
   price: number
   excess_price_per_kg: number
+  excess_price_per_piece: number
   remaining_allowance_kg: number | null
   currency: string
 }

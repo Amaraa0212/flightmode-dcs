@@ -37,8 +37,6 @@ export interface ApiFlight {
   gate: string | null
   status: FlightStatus
   status_reason: string | null
-  excess_baggage_max_kg: string | null
-  excess_baggage_price_per_kg: string | null
   passenger_counts?: { booked: number; checked_in: number; boarded: number }
 }
 
@@ -83,6 +81,8 @@ export interface ApiCheckedBaggage {
   pieces: number
   weight_kg: string
   free_allowance_kg: string
+  /** PC rule: pieces over the free ones */
+  excess_pieces?: number
   price: string
   excess_price: string
   payment_reference?: string | null
@@ -187,8 +187,9 @@ export interface ApiBaggageRules {
   no_baggage_rule?: boolean
   rules: ApiBaggageRule[]
   prepaid_pieces: number
-  excess_price_per_kg: string | null
-  excess_max_kg: string | null
+  /** from the flight's EBAG rules: an extra piece (PC rule), an excess kg */
+  excess_price_per_piece: number | string | null
+  excess_price_per_kg: number | string | null
   accepted: ApiCheckedBaggage[]
 }
 
@@ -238,9 +239,12 @@ export interface ApiBoardingPass {
 export interface ApiBaggageQuote {
   free_allowance_kg: number
   excess_kg: number
+  /** PC rule: pieces over the free ones (priced per piece) */
+  excess_pieces: number
   excess_price: number
   price: number
   excess_price_per_kg: number
+  excess_price_per_piece: number
   /** combined (piece + kg) rule: free kg left after this bag */
   remaining_allowance_kg: number | null
   currency: string

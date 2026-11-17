@@ -109,9 +109,15 @@ export const createBaggageColumns = (): ColumnDef<BaggageRow>[] => [
       <DataTableColumnHeader column={column} title='Excess' />
     ),
     cell: ({ row }: { row: Row<BaggageRow> }) =>
-      row.original.excess_kg && row.original.piece_no === 1 ? (
+      (row.original.excess_kg || row.original.excess_pieces) && row.original.piece_no === 1 ? (
         <span className='font-mono text-xs text-amber-600 dark:text-amber-300'>
-          {row.original.excess_kg} kg • {row.original.excess_price.toLocaleString()} ₮
+          {[
+            row.original.excess_pieces ? `${row.original.excess_pieces} pc` : null,
+            row.original.excess_kg ? `${row.original.excess_kg} kg` : null,
+          ]
+            .filter(Boolean)
+            .join(' + ')}{' '}
+          • {row.original.excess_price.toLocaleString()} ₮
         </span>
       ) : (
         <span className='text-muted-foreground text-xs'>-</span>

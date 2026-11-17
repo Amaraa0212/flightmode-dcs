@@ -385,10 +385,18 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
             {!flightBagMode && !noBaggageRule && quote && !quoteError && (
               <p className='text-muted-foreground text-[11px]'>
                 Allowance {quote.free_allowance_kg} kg
-                {quote.excess_kg > 0 && (
+                {(quote.excess_pieces > 0 || quote.excess_kg > 0) && (
                   <span className='text-amber-500'>
-                    {' '}• excess {quote.excess_kg} kg × {quote.excess_price_per_kg.toLocaleString()} ={' '}
-                    {quote.excess_price.toLocaleString()}₮
+                    {' '}• excess{' '}
+                    {[
+                      quote.excess_pieces > 0 &&
+                        `${quote.excess_pieces} pc × ${quote.excess_price_per_piece.toLocaleString()}`,
+                      quote.excess_kg > 0 &&
+                        `${quote.excess_kg} kg × ${quote.excess_price_per_kg.toLocaleString()}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' + ')}{' '}
+                    = {quote.excess_price.toLocaleString()}₮
                   </span>
                 )}
                 {quote.price > 0 && <span> • {quote.price.toLocaleString()}₮</span>}
@@ -484,6 +492,9 @@ export function BaggagePanel({ flight, segmentId }: BaggagePanelProps) {
                             ? 'FREE • '
                             : ''}
                       {bag.pieces} pc / {bag.weight_kg} kg
+                      {bag.excess_pieces > 0 && (
+                        <span className='text-amber-500'> • +{bag.excess_pieces} pc</span>
+                      )}
                       {bag.excess_kg > 0 && (
                         <span className='text-amber-500'> • +{bag.excess_kg} kg</span>
                       )}
