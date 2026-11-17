@@ -92,7 +92,6 @@ export function toFlight(api: ApiFlight, statistics?: ApiFlightStatistics): DcsF
     service_type: api.service_type ?? 'scheduled',
     status: api.status,
     status_reason: api.status_reason,
-    excess_price_per_kg: num(api.excess_baggage_price_per_kg),
     stats,
   }
 }
@@ -142,6 +141,7 @@ export function toBaggage(api: ApiCheckedBaggage): CheckedBaggage {
     free_allowance_kg: allowance,
     // crew bags have no allowance; an excess (EBAG) or used-up piece + kg pool is all excess
     excess_kg: api.type === 'passenger' ? Math.max(0, weight - allowance) : 0,
+    excess_pieces: api.excess_pieces ?? 0,
     excess_price: num(api.excess_price),
     price: num(api.price),
     payment_reference: api.payment_reference ?? null,
@@ -231,8 +231,8 @@ export function toRulesForSegment(api: ApiBaggageRules): BaggageRulesForSegment 
     no_baggage_rule: !!api.no_baggage_rule,
     rules: api.rules.map(toRule),
     prepaid_pieces: api.prepaid_pieces,
-    excess_price_per_kg: num(api.excess_price_per_kg),
-    excess_max_kg: api.excess_max_kg === null ? null : num(api.excess_max_kg),
+    excess_price_per_piece: num(api.excess_price_per_piece ?? 0),
+    excess_price_per_kg: num(api.excess_price_per_kg ?? 0),
     accepted: api.accepted.map(toBaggage),
   }
 }
