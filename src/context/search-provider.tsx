@@ -17,7 +17,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'k' && e.ctrlKey) {
         e.preventDefault()
         setOpen((open) => !open)
       }

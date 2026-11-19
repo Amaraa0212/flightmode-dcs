@@ -172,6 +172,7 @@ export function toPassenger(api: ApiSegment): DcsPassenger {
     nationality: p.nationality,
     document_type: p.document_type,
     document_number: p.document_number,
+    document_issuing_country: p.document_issuing_country ?? null,
     document_expires_at: p.document_expires_at,
     email: p.email,
     phone: p.phone,
@@ -205,6 +206,7 @@ export function toPassenger(api: ApiSegment): DcsPassenger {
           nationality: p.infant.nationality,
           document_type: p.infant.document_type,
           document_number: p.infant.document_number,
+          document_issuing_country: p.infant.document_issuing_country ?? null,
           document_expires_at: p.infant.document_expires_at,
         }
       : null,
@@ -259,6 +261,7 @@ export function toSeatMap(api: ApiSeatMap, aircraftType: string): SeatMap {
                 is_exit: s.is_emergency_exit,
                 segment_id: s.occupant?.segment_id ?? null,
                 occupant_name: s.occupant?.name ?? null,
+                has_infant: !!s.occupant?.has_infant,
                 checked_in: !!s.occupant && ['checked_in', 'boarded', 'flown'].includes(s.occupant.status),
               }
             : null

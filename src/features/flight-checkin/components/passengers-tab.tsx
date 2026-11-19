@@ -109,6 +109,15 @@ export function PassengersTab({
   useCommand('nextPax', () => step(1))
   useCommand('prevPax', () => step(-1))
 
+  // SSR filter: the codes the passengers of this flight have
+  const ssrOptions = useMemo(
+    () =>
+      [...new Set((rows ?? []).flatMap((r) => r.ssr_codes))]
+        .sort()
+        .map((code) => ({ label: code, value: code })),
+    [rows]
+  )
+
   const colors = useMemo(
     () => groupColors((rows ?? []).map((r) => r.group_id)),
     [rows]
@@ -187,6 +196,7 @@ export function PassengersTab({
             { columnId: 'query', searchKey: 'query', type: 'string' },
             { columnId: 'status', searchKey: 'status', type: 'array' },
             { columnId: 'cabin', searchKey: 'cabin', type: 'array' },
+            { columnId: 'ssr', searchKey: 'ssr', type: 'array' },
           ],
         }}
         toolbar={{
@@ -199,6 +209,7 @@ export function PassengersTab({
               options: SEGMENT_STATUS_OPTIONS,
             },
             { columnId: 'cabin', title: 'Cabin', options: CABIN_OPTIONS },
+            { columnId: 'ssr', title: 'SSR', options: ssrOptions },
           ],
           exportFileName: TABLE_CONFIG.PASSENGERS_EXPORT,
         }}

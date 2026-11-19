@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileSpreadsheet, Loader2, Printer } from 'lucide-react'
 import { toast } from 'sonner'
-import { dcsFlightService, dcsSeatMapService, type DcsFlight } from '@/services'
+import { dcsBaggageService, dcsFlightService, dcsSeatMapService, type DcsFlight } from '@/services'
 import { manifestDocument, type ManifestOptions } from '@/lib/manifest-template'
 import { printDocument } from '@/lib/print'
+import { exportJsonToExcel } from '@/utils/table-export'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -74,6 +75,60 @@ export function ManifestDialog({
     onError: (error: Error) => toast.error(error.message),
   })
 
+  // excess baggage report: every bag with excess pieces / kg — what was paid (billing number) or waived
+  const excess = useMutation({
+    mutationFn: async () => {
+      const res = await dcsBaggageService.list(flight.id, { current: 1, pageSize: 10_000 })
+      const bags = (res.body?.items ?? []).filter(
+        (b) => b.type === 'passenger' && (b.excess_pieces > 0 || b.excess_kg > 0 || b.excess_price > 0)
+      )
+      if (!bags.length) throw new Error('No excess baggage on this flight.')
+      const rows: Record<string, string | number>[] = bags.map((b, i) => ({
+        '№': i + 1,
+        PNR: b.pnr ?? '',
+        Passenger: b.owner,
+        Tags: b.tags.map((t) => t.tag_number).join(', '),
+        Rule: b.rule ?? '',
+        Pieces: b.pieces,
+        'Weight kg': b.weight_kg,
+        'Free kg': b.free_allowance_kg,
+        'Excess pieces': b.excess_pieces,
+        'Excess kg': b.excess_kg,
+        'Excess price': b.excess_price,
+        Waived: b.waived_amount,
+        Collected: Math.max(0, b.excess_price - b.waived_amount),
+        Currency: b.currency,
+        'Billing / transaction №': b.payment_reference ?? '',
+        'Waive reason': b.waive_reason ?? '',
+        'Waived by': b.waive_authorized_by ?? '',
+        Time: b.created_at,
+      }))
+      const sum = (key: string) => rows.reduce((total, r) => total + Number(r[key]), 0)
+      rows.push({
+        '№': '',
+        PNR: '',
+        Passenger: 'TOTAL',
+        Tags: '',
+        Rule: '',
+        Pieces: sum('Pieces'),
+        'Weight kg': sum('Weight kg'),
+        'Free kg': sum('Free kg'),
+        'Excess pieces': sum('Excess pieces'),
+        'Excess kg': sum('Excess kg'),
+        'Excess price': sum('Excess price'),
+        Waived: sum('Waived'),
+        Collected: sum('Collected'),
+        Currency: bags[0].currency,
+        'Billing / transaction №': '',
+        'Waive reason': '',
+        'Waived by': '',
+        Time: '',
+      })
+      await exportJsonToExcel(rows, `${flight.flight_number}-excess-baggage.xlsx`)
+    },
+    onError: (error: Error) => toast.error(error.message),
+  })
+
   const nothing = REPORTS.every((r) => count(r.id) === 0)
 
   return (
@@ -132,6 +187,18 @@ export function ManifestDialog({
           >
             {excel.isPending ? <Loader2 className='size-4 animate-spin' /> : <FileSpreadsheet className='size-4' />}
             Excel
+          </Button>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='gap-1.5'
+            title='Excess baggage report (Excel)'
+            disabled={excess.isPending}
+            onClick={() => excess.mutate()}
+          >
+            {excess.isPending ? <Loader2 className='size-4 animate-spin' /> : <FileSpreadsheet className='size-4' />}
+            Excess bags
           </Button>
           <div className='flex gap-2'>
             <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>

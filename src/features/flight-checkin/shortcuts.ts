@@ -38,10 +38,11 @@ type Shortcut = {
   hidden?: boolean
 }
 
-export const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl'
+/** The counters run Windows: every command is Ctrl (also on a Mac — Cmd is left to the browser) */
+export const MOD = 'Ctrl'
 
 const ctrl = (code: string) => (e: KeyboardEvent) =>
-  e.code === code && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+  e.code === code && e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
 const alt = (key: string) => (e: KeyboardEvent) =>
   e.key === key && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
 
@@ -64,7 +65,7 @@ export const SHORTCUTS: Shortcut[] = [
     label: 'Print bag tag no. 1-9 of the passenger',
     match: (e) => {
       const digit = /^Digit([1-9])$/.exec(e.code)?.[1]
-      return !!digit && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && Number(digit)
+      return !!digit && e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && Number(digit)
     },
   },
   { id: 'checkIn', keys: [MOD, 'P'], label: 'Check in & print (picked seat or auto seat)', match: ctrl('KeyP') },
@@ -91,7 +92,7 @@ export const SHORTCUTS: Shortcut[] = [
     id: 'settings',
     keys: [MOD, 'Alt', 'Shift', 'S'],
     label: 'Counter settings (printers, bag tag feeder, gate, gate agents)',
-    match: (e) => e.code === 'KeyS' && (e.ctrlKey || e.metaKey) && e.altKey && e.shiftKey,
+    match: (e) => e.code === 'KeyS' && e.ctrlKey && !e.metaKey && e.altKey && e.shiftKey,
     hidden: true,
   },
   {
@@ -156,11 +157,11 @@ export function useShortcutKeys() {
       return null
     }
 
-    // capture: Ctrl/Cmd commands win over the browser and the app (Ctrl+B also toggles the sidebar)
+    // capture: Ctrl commands win over the browser and the app (Ctrl+B also toggles the sidebar)
     const onCapture = (event: KeyboardEvent) => {
       // read before Radix closes a dialog on the same Esc, so that Esc does not also close the passenger
       blocked = !!document.querySelector('[role="dialog"], [role="alertdialog"]')
-      if (blocked || !(event.ctrlKey || event.metaKey)) return
+      if (blocked || !event.ctrlKey) return
       const hit = find(event)
       if (hit) handle(event, hit.shortcut, hit.arg)
     }

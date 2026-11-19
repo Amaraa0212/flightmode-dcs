@@ -25,7 +25,7 @@ export const TABLE_CONFIG = {
   BAGGAGE_SEARCH_PLACEHOLDER: 'Owner, PNR or tag number',
 } as const
 
-export const TABS = ['passengers', 'baggage'] as const
+export const TABS = ['passengers', 'baggage', 'nationality'] as const
 export type CheckinTab = (typeof TABS)[number]
 
 export const BAGGAGE_TYPE_OPTIONS = [

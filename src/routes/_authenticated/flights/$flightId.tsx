@@ -11,6 +11,7 @@ export const flightCheckinSearchSchema = z.object({
   query: z.string().optional(),
   status: z.array(z.string()).optional(),
   cabin: z.array(z.string()).optional(),
+  ssr: z.array(z.string()).optional(),
   type: z.array(z.string()).optional(),
 })
 

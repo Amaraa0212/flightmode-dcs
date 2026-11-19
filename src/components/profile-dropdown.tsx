@@ -44,7 +44,7 @@ export function ProfileDropdown() {
           <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
             Sign out
             <DropdownMenuShortcut className='text-current'>
-              ⇧⌘Q
+              Ctrl+Shift+Q
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>

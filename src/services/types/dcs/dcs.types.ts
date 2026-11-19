@@ -97,6 +97,7 @@ export interface DcsInfant {
   nationality: string | null
   document_type: string | null
   document_number: string | null
+  document_issuing_country: string | null
   document_expires_at: string | null
 }
 
@@ -122,6 +123,7 @@ export interface DcsPassenger extends Record<string, unknown> {
   nationality: string | null
   document_type: string | null
   document_number: string | null
+  document_issuing_country: string | null
   document_expires_at: string | null
   email: string | null
   phone: string | null
@@ -149,6 +151,7 @@ export interface DcsPassenger extends Record<string, unknown> {
 export interface DcsPassengerListParams extends ListParams {
   status?: string | string[]
   cabin?: string | string[]
+  ssr?: string | string[]
 }
 
 export interface BaggageTag {
@@ -269,6 +272,8 @@ export interface Seat {
   is_exit: boolean
   segment_id: number | null
   occupant_name: string | null
+  /** the occupant holds an infant on the lap */
+  has_infant: boolean
   checked_in: boolean
 }
 

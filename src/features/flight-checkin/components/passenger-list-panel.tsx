@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BriefcaseBusiness, FileText, Users } from 'lucide-react'
+import { BriefcaseBusiness, FileText, Globe, Users } from 'lucide-react'
 import type { DcsFlight, DcsPassenger } from '@/services'
 import { cn } from '@/lib/utils'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { focusSoon, MOD, useCommand } from '../shortcuts'
 import { BaggageTab } from './baggage-tab'
 import { ManifestDialog } from './manifest-dialog'
+import { NationalityTab } from './nationality-tab'
 import { type CheckinTab, TABLE_CONFIG } from './constants'
 import { PanelHeader } from './panel-header'
 import { PassengersTab } from './passengers-tab'
@@ -26,7 +27,15 @@ type PassengerListPanelProps = {
 const VIEWS = [
   { value: 'passengers', label: 'Passenger view', icon: Users },
   { value: 'baggage', label: 'Baggage view', icon: BriefcaseBusiness },
+  { value: 'nationality', label: 'Citizenship / passport country', icon: Globe },
 ] as const
+
+const TITLES: Record<CheckinTab, string> = {
+  passengers: 'Passengers',
+  baggage: 'Baggage',
+  nationality: 'Citizenship',
+}
+const SHORTCUT: Partial<Record<CheckinTab, string>> = { passengers: 'E', baggage: 'D' }
 
 function SummaryChip({ label, value, className }: { label: string; value: number; className: string }) {
   return (
@@ -62,14 +71,14 @@ export function PassengerListPanel({
   return (
     <section className='fm-panel flex min-w-0 flex-col overflow-hidden'>
       <PanelHeader
-        title={view === 'passengers' ? 'Passengers' : 'Baggage'}
+        title={TITLES[view]}
         action={
           <div className='bg-surface flex rounded-lg border p-0.5'>
             {VIEWS.map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
                 type='button'
-                title={`${label} (${MOD}+${value === 'passengers' ? 'E' : 'D'})`}
+                title={SHORTCUT[value] ? `${label} (${MOD}+${SHORTCUT[value]})` : label}
                 aria-label={label}
                 onClick={() => onViewChange(value)}
                 className={cn(
@@ -95,6 +104,8 @@ export function PassengerListPanel({
             selectedId={selectedId}
             onSelect={onSelect}
           />
+        ) : view === 'nationality' ? (
+          <NationalityTab flightId={flight.id} />
         ) : (
           <BaggageTab
             flightId={flight.id}

@@ -79,7 +79,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
         ],
       },
       {
-        title: 'Товчлол (Ctrl / ⌘)',
+        title: 'Товчлол (Ctrl)',
         items: [
           'S — хайх, R — шинэчлэх, E — зорчигч, D — ачааны харагдац.',
           'P — бүртгээд хэвлэх, V — boarding pass, B — ачааны жин, 1–9 — зорчигчийн тухайн дугаартай bag tag хэвлэх, G — бүлэглэх.',
