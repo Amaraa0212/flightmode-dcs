@@ -155,6 +155,9 @@ export const createPassengerColumns = ({
   },
   {
     id: 'ssr',
+    accessorFn: (row: DcsPassenger) => row.ssr_codes.join(' '),
+    // the SSR filter counts each code (a passenger with CHML VGML counts under both)
+    getUniqueValues: (row: DcsPassenger) => row.ssr_codes,
     header: ({ column }: { column: Column<DcsPassenger> }) => (
       <DataTableColumnHeader column={column} title='SSR' />
     ),

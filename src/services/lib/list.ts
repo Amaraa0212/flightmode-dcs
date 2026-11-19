@@ -28,7 +28,11 @@ function matchesQuery(row: unknown, query: string, keys: string[]) {
 function matchesFilter(value: unknown, filter: unknown) {
   if (filter === undefined || filter === null || filter === '') return true
   if (Array.isArray(filter)) {
-    return filter.length === 0 || filter.map(String).includes(String(value))
+    if (filter.length === 0) return true
+    const wanted = filter.map(String)
+    // a list value (e.g. a passenger's SSR codes) matches when any of its items is chosen
+    if (Array.isArray(value)) return value.some((v) => wanted.includes(String(v)))
+    return wanted.includes(String(value))
   }
   return String(value) === String(filter)
 }

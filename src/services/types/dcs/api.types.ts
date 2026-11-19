@@ -158,7 +158,7 @@ export interface ApiSeat {
   is_emergency_exit: boolean
   state: 'available' | 'occupied' | 'blocked' | 'held' | 'restricted'
   price?: string
-  occupant?: { segment_id: number; passenger_id: number; name: string; status: SegmentStatus }
+  occupant?: { segment_id: number; passenger_id: number; name: string; status: SegmentStatus; has_infant?: boolean }
 }
 
 export interface ApiSeatMap {

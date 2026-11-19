@@ -74,7 +74,7 @@ function patchSeatMap(map: SeatMap | undefined, change: SeatChange): SeatMap | u
         if (seat.number === change.to)
           return { ...seat, state: 'occupied', segment_id: change.segment_id, checked_in: true }
         if (seat.number === change.from && seat.segment_id === change.segment_id)
-          return { ...seat, state: 'available', segment_id: null, occupant_name: null, checked_in: false }
+          return { ...seat, state: 'available', segment_id: null, occupant_name: null, has_infant: false, checked_in: false }
         return seat
       }),
     })),

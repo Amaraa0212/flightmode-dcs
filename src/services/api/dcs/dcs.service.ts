@@ -160,6 +160,7 @@ export const dcsPassengerService = {
       filters: {
         status: (row) => row.status,
         cabin: (row) => row.cabin_class,
+        ssr: (row) => row.ssr_codes,
       },
     }),
 

@@ -68,10 +68,14 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
   // zone → passengers seated in it, and its colour (order of appearance)
   const zones = [...new Set(map.rows.map((row) => row.zone).filter((z): z is string => !!z))]
   const paxInZone = new Map<string, number>()
+  // infants on a lap in the zone: the head count reads ADT+INF (5+1)
+  const infantsInZone = new Map<string, number>()
   map.rows.forEach((row) =>
     row.seats.forEach((cell) => {
-      if (cell && cell !== 'aisle' && cell.state === 'occupied' && row.zone)
+      if (cell && cell !== 'aisle' && cell.state === 'occupied' && row.zone) {
         paxInZone.set(row.zone, (paxInZone.get(row.zone) ?? 0) + 1)
+        if (cell.has_infant) infantsInZone.set(row.zone, (infantsInZone.get(row.zone) ?? 0) + 1)
+      }
     })
   )
   const tone = (zone: string) => zones.indexOf(zone) % ZONE_TONES.length
@@ -130,7 +134,8 @@ export function SeatGrid({ map, rotation, renderSeat }: SeatGridProps) {
             {newCabin && newZone && <span className='text-muted-foreground/50'>·</span>}
             {newZone && (
               <span className={cn('rounded border px-1', ZONE_TEXT[tone(row.zone!)])}>
-                Zone {row.zone} · {paxInZone.get(row.zone!) ?? 0} pax
+                Zone {row.zone} · {paxInZone.get(row.zone!) ?? 0}
+                {infantsInZone.get(row.zone!) ? `+${infantsInZone.get(row.zone!)}` : ''} pax
               </span>
             )}
           </span>
