@@ -135,7 +135,8 @@ const BAG_TAG_CSS = `
   @page { size: 51mm auto; margin: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { margin: 0 0 0 6px; background: #fff; color: #000; font-family: Helvetica, Arial, sans-serif; }
-  hr { border: 0; height: 0.5px; background-color: #000; margin: 0; }
+  /* legacy divider: the browser's own hr margins kept (margin: 0 glued the 0.5px line to the boxes and it did not print) */
+  hr { border: 0; height: 0.5px; background-color: #000; }
   img { width: 100%; height: auto; }
   .logo-img { filter: grayscale(100%); }
   .logo-text { font-size: 16px; font-weight: 700; text-align: center; }
