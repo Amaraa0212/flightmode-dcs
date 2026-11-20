@@ -146,7 +146,8 @@ const BAG_TAG_CSS = `
   .c1-1 { height: 1.7cm; padding: 0.5cm 0.5cm 0.3cm; }
   .c1-2 { height: 1.2cm; padding: 0 0.5cm; }
   .c1-3 { height: 1.9cm; padding: 0.2cm; }
-  .c2 { margin-top: 0.4cm; }
+  /* legacy container-2: a fixed 38 cm, so the stubs below land on the tag's perforations */
+  .c2 { height: 38cm; margin-top: 0.4cm; }
   .c2-1 { height: 10.4cm; overflow: hidden; padding: 0 0.4cm; display: flex; }
   .c2-addi { height: 0.5cm; overflow: hidden; }
   .c2-2 { height: 2cm; overflow: hidden; display: flex; flex-direction: column; }
@@ -154,6 +155,8 @@ const BAG_TAG_CSS = `
   .c2-3-1 { padding: 0 0.5cm; }
   .c2-4 { height: 10.4cm; padding: 0 0.4cm; display: flex; flex-direction: column; }
   .stub { overflow: hidden; }
+  /* legacy container-3 / container-4: the first two stubs are 1.57 cm each; the last takes what is left */
+  .stub.fixed { height: 1.57cm; }
   .stub-inner { display: flex; flex-direction: column; align-items: center; padding: 0 0.2cm; }
   .stub-bar { padding: 0 0.2cm; height: 0.5cm; margin-bottom: 0.05cm; }
   .row-1 { display: flex; width: 100%; height: 48%; }
@@ -203,11 +206,11 @@ export function bagTagDocument(t: BagTag) {
   const bigBarcodes = `
     <div class="r90" style="margin-bottom:0.5cm;"><img src="${barcode}" alt="" style="width:4.4cm;height:4cm;"></div>
     <div><img src="${barcode}" alt="" style="width:4.4cm;height:4cm;"></div>`
-  const stub = (barHeight: string) => `
-    <div class="stub"><div class="stub-inner">
+  const stub = (barHeight: string, fixed: boolean, labelTop: string) => `
+    <div class="stub${fixed ? ' fixed' : ''}"><div class="stub-inner">
       <div class="even"><span class="spaced fs-s light">${e(t.flight_number)}</span><span class="spaced fs-s light">${e(date)}</span><span class="spaced fs-s light">${e(t.destination.code)}</span></div>
       <div class="stub-bar"><img src="${barcode}" alt="" style="width:4cm;height:${barHeight};"></div>
-      <div style="margin-top:0.1cm;"><span class="spaced fs-s bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
+      <div style="margin-top:${labelTop};"><span class="spaced fs-s bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
     </div></div>`
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Bag tag ${e(t.tag_number)}</title>
@@ -248,9 +251,9 @@ export function bagTagDocument(t: BagTag) {
   </div>
 
   <div class="endsection">
-    ${stub('0.7cm')}
-    <div style="margin-top:0.5cm">${stub('0.7cm')}</div>
-    ${stub('0.5cm')}
+    ${stub('0.7cm', true, '0.1cm')}
+    <div style="margin-top:0.5cm">${stub('0.7cm', true, '0.1cm')}</div>
+    ${stub('0.5cm', false, '-8px')}
   </div>
 </div>
 </body></html>`
