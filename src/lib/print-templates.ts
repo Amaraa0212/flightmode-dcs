@@ -36,7 +36,8 @@ const BOARDING_PASS_CSS = `
   @page { size: 80mm auto; margin: 0; }
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif; }
   body { margin: 0; padding: 0; width: 80mm; background: #fff; color: #000; }
-  .ticket { width: 80mm; padding: 6mm 5mm; }
+  /* 2 mm further left than the legacy 5 / 5: the POS-80 printed the pass pushed to the right */
+  .ticket { width: 80mm; padding: 6mm 7mm 6mm 3mm; }
   .logo { display: flex; align-items: center; justify-content: center; }
   .logo img { width: 135px; }
   .logo-text { font-size: 18px; font-weight: 700; text-align: center; }
