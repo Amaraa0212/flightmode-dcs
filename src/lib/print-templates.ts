@@ -140,7 +140,9 @@ const BAG_TAG_CSS = `
   img { width: 100%; height: auto; }
   .logo-img { filter: grayscale(100%); }
   .logo-text { font-size: 16px; font-weight: 700; text-align: center; }
-  .light { font-weight: 200; } .xlight { font-weight: 100; } .heavy { font-weight: 500; } .xheavy { font-weight: 550; } .bold { font-weight: bold; }
+  /* bolder than legacy (200 / 100 / 500): the thermal head lost the thin strokes, worst in the turned parts.
+     Arial (Windows) has 400 and 700 only — 600 and up print bold */
+  .light { font-weight: 600; } .xlight { font-weight: 600; } .heavy { font-weight: 700; } .xheavy { font-weight: 800; } .bold { font-weight: bold; }
   .fs-s { font-size: 10px; } .fs-n { font-size: 12px; } .fs-m { font-size: 15px; } .fs-b { font-size: 18px; } .fs-2 { font-size: 30px; } .fs-3 { font-size: 42px; }
   .r90 { transform: rotate(90deg); } .r180 { transform: rotate(180deg); }
   .spaced { letter-spacing: 0.1em; white-space: nowrap; display: inline-block; }
