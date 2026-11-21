@@ -118,7 +118,19 @@ async function findPrinter(names: string[]): Promise<string> {
 /** Page setup of the legacy DCS print jobs (mm) */
 const PAGE = {
   boardingPass: { size: { width: 80, height: 215 }, units: 'mm', scaleContent: true, fitToPage: true },
-  bagTag: { size: { width: 51, height: 511 }, units: 'mm', copies: 1, scaleContent: true, background: true, fitToPage: true },
+  // drawn at the printer's own density, without smoothing, in pure black: the thermal head has no grey, and
+  // smoothed edges of the rotated parts (180° / 90° barcodes and text) printed faint
+  bagTag: {
+    size: { width: 51, height: 511 },
+    units: 'mm',
+    copies: 1,
+    scaleContent: true,
+    background: true,
+    fitToPage: true,
+    density: 'best',
+    interpolation: 'nearest-neighbor',
+    colorType: 'blackwhite',
+  },
 } as const
 
 /** Prints complete HTML documents, one job each, on the counter printer of that kind. */

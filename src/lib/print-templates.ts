@@ -15,9 +15,12 @@ function barcodePng(options: Parameters<typeof toCanvas>[1]) {
   return canvas.toDataURL('image/png')
 }
 
-/** CODE128 of the 10-digit bag tag number */
-export const code128Png = (text: string) =>
-  barcodePng({ bcid: 'code128', text, scale: 3, height: 12, includetext: false })
+/**
+ * CODE128 of the 10-digit bag tag number. `rotate` draws it already turned (R 90° clockwise, I 180°, L 90°
+ * counter-clockwise): a barcode under a CSS rotation is redrawn smoothed and printed faint on the thermal head.
+ */
+export const code128Png = (text: string, rotate: 'N' | 'R' | 'I' | 'L' = 'N') =>
+  barcodePng({ bcid: 'code128', text, scale: 3, height: 12, includetext: false, rotate })
 
 /** QR of the IATA BCBP string (legacy pass used a QR code) */
 export const qrPng = (text: string) => barcodePng({ bcid: 'qrcode', text, scale: 4 })
@@ -132,7 +135,8 @@ const BAG_TAG_CSS = `
   @page { size: 51mm auto; margin: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { margin: 0 0 0 6px; background: #fff; color: #000; font-family: Helvetica, Arial, sans-serif; }
-  hr { border: 0; height: 0.5px; background-color: #000; margin: 0; }
+  /* legacy divider: the browser's own hr margins kept (margin: 0 glued the 0.5px line to the boxes and it did not print) */
+  hr { border: 0; height: 0.5px; background-color: #000; }
   img { width: 100%; height: auto; }
   .logo-img { filter: grayscale(100%); }
   .logo-text { font-size: 16px; font-weight: 700; text-align: center; }
@@ -142,7 +146,10 @@ const BAG_TAG_CSS = `
   .spaced { letter-spacing: 0.1em; white-space: nowrap; display: inline-block; }
   .even { display: flex; justify-content: space-evenly; align-items: center; width: 100%; }
   .center { text-align: center; }
-  .container { background: #fff; width: 5.1cm; }
+  .container { background: #fff; width: 5.1cm; position: relative; }
+  /* the top section's barcode, drawn turned at the place c1's 180° turn put it (c1-1 and c1-2 are fixed heights) */
+  .c1-bar { position: absolute; z-index: 1; left: 0.6cm; top: 3.6cm; width: 4cm; height: 0.9cm; }
+  .bc-flip { display: flex; flex-direction: column; justify-content: flex-end; width: 4.4cm; }
   .c1 { height: 7cm; overflow: hidden; transform: rotate(180deg); }
   .c1-1 { height: 1.7cm; padding: 0.5cm 0.5cm 0.3cm; }
   .c1-2 { height: 1.2cm; padding: 0 0.5cm; }
@@ -173,6 +180,8 @@ const BAG_TAG_CSS = `
 
 export function bagTagDocument(t: BagTag) {
   const barcode = code128Png(t.barcode)
+  // the tag's turned barcodes, drawn turned (see code128Png): same places and sizes as the legacy CSS rotations
+  const turned = { R: code128Png(t.barcode, 'R'), I: code128Png(t.barcode, 'I'), L: code128Png(t.barcode, 'L') }
   const plate = `${t.airline.iata_code} ${t.tag_number.slice(-6)}`
   const name =
     t.is_crew || t.is_cargo || t.is_rush
@@ -204,9 +213,18 @@ export function bagTagDocument(t: BagTag) {
         <div class="col-2"><span class="spaced fs-b heavy">${e(date)}</span></div>
       </div>
     </div><hr>`
+  // lower block: a barcode turned 90° (4 × 4.4 cm in its 4.4 × 4 cm place), then a straight one
   const bigBarcodes = `
-    <div class="r90" style="margin-bottom:0.5cm;"><img src="${barcode}" alt="" style="width:4.4cm;height:4cm;"></div>
+    <div style="height:4.1cm;margin-bottom:0.5cm;"><img data-rot="90" src="${turned.R}" alt="" style="display:block;width:4cm;height:4.4cm;margin:-0.1cm 0 0 0.2cm;"></div>
     <div><img src="${barcode}" alt="" style="width:4.4cm;height:4cm;"></div>`
+  // upper block: the lower one upside down (legacy rotated the whole block 180°) — the order reversed, pushed to
+  // the bottom of its 10.4 cm, barcodes drawn at 180° / 270°; only the plate text keeps a CSS turn
+  const flippedBarcodes = `
+    <div class="bc-flip">
+      <div class="center r180" style="margin-bottom:4px;"><span class="spaced fs-n bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
+      <div style="margin-bottom:0.5cm;"><img data-rot="180" src="${turned.I}" alt="" style="display:block;width:4.4cm;height:4cm;"></div>
+      <div style="height:4.1cm;"><img data-rot="270" src="${turned.L}" alt="" style="display:block;width:4cm;height:4.4cm;margin:-0.15cm 0 0 0.15cm;"></div>
+    </div>`
   const stub = (barHeight: string, fixed: boolean, labelTop: string) => `
     <div class="stub${fixed ? ' fixed' : ''}"><div class="stub-inner">
       <div class="even"><span class="spaced fs-s light">${e(t.flight_number)}</span><span class="spaced fs-s light">${e(date)}</span><span class="spaced fs-s light">${e(t.destination.code)}</span></div>
@@ -217,9 +235,10 @@ export function bagTagDocument(t: BagTag) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Bag tag ${e(t.tag_number)}</title>
 <style>${BAG_TAG_CSS}</style></head><body>
 <div class="container${t.airline.bag_tag_rotation === 180 ? ' r180' : ''}">
+  <img data-rot="180" src="${turned.I}" alt="" class="c1-bar">
   <div class="c1">
     <div class="c1-1">${logo(t.airline.logo_url, t.airline.name, 'logo-img')}</div>
-    <div class="c1-2"><img src="${barcode}" alt="" style="width:4cm;height:0.9cm;"></div>
+    <div class="c1-2"><div style="width:4cm;height:0.9cm;"></div></div>
     <div class="center"><span class="spaced fs-b bold">${e(plate)}</span></div>
     <div class="c1-3">
       <div class="even center"><span class="fs-n light">${e(name)}</span></div>
@@ -230,9 +249,7 @@ export function bagTagDocument(t: BagTag) {
   </div>
 
   <div class="c2">
-    <div class="c2-1"><div class="r180">${bigBarcodes}
-      <div class="center" style="margin-top:4px;"><span class="spaced fs-n bold">${e(plate)} ${e(t.weight_kg)}kg</span></div>
-    </div></div>
+    <div class="c2-1">${flippedBarcodes}</div>
     <div class="c2-addi r180"><div class="row-1"><div class="col-1"><span class="fs-m ${t.is_rush ? 'bold' : 'xlight'}">${crew}</span></div></div></div>
     <hr>
     ${via(true)}${via(true)}${to(true)}
