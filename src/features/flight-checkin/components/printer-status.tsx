@@ -32,7 +32,9 @@ const STATUS = {
   offline: { label: 'QZ', dot: 'bg-rose-400' },
 } as const
 
-const FIELDS: { key: keyof PrinterSettings; label: string; hint: string }[] = [
+type PrinterNameKey = Exclude<keyof PrinterSettings, 'boardingPassRaw'>
+
+const FIELDS: { key: PrinterNameKey; label: string; hint: string }[] = [
   { key: 'boardingPass', label: 'Boarding pass printer', hint: '80 mm, legacy "Printer POS-80"' },
   { key: 'bagTag', label: 'Bag tag printer', hint: '51 mm strip, legacy "PrinterBagTag"' },
   { key: 'bagTagFallback', label: 'Bag tag fallback', hint: 'used when the first one is missing' },
@@ -76,6 +78,7 @@ export function CounterSettingsDialog({ flight, onClose }: { flight: DcsFlight; 
     bagTag: settings.bagTag,
     bagTagFallback: settings.bagTagFallback,
     bagTagFeeder: settings.bagTagFeeder ?? '',
+    boardingPassRaw: !!settings.boardingPassRaw,
   })
   const [gate, setGate] = useState(flight.gate ?? '')
   const { data: crew, isLoading: crewLoading } = useQuery({
@@ -153,6 +156,21 @@ export function CounterSettingsDialog({ flight, onClose }: { flight: DcsFlight; 
               </span>
             </label>
           ))}
+          <label className='flex items-start gap-2 text-sm'>
+            <input
+              type='checkbox'
+              className='mt-1'
+              checked={draft.boardingPassRaw}
+              onChange={(e) => setDraft((d) => ({ ...d, boardingPassRaw: e.target.checked }))}
+            />
+            <span className='grid gap-0.5'>
+              <span className='font-medium'>Boarding pass: direct ESC/POS print</span>
+              <span className='text-muted-foreground text-[11px]'>
+                Sends the pass straight to the printer, without the Windows driver. Turn on when the boarding pass
+                pauses midway while printing; turn off if it prints wrong.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className='grid gap-3 border-t pt-3'>
