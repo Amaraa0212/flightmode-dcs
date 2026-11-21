@@ -117,7 +117,16 @@ async function findPrinter(names: string[]): Promise<string> {
 
 /** Page setup of the legacy DCS print jobs (mm) */
 const PAGE = {
-  boardingPass: { size: { width: 80, height: 215 }, units: 'mm', scaleContent: true, fitToPage: true },
+  // black-white: a colour raster of the 80 × 215 mm page is several times the data, the POS-80 ran out of buffer
+  // mid-print and paused until the rest arrived (its self-test, stored in the printer, did not)
+  boardingPass: {
+    size: { width: 80, height: 215 },
+    units: 'mm',
+    scaleContent: true,
+    fitToPage: true,
+    interpolation: 'nearest-neighbor',
+    colorType: 'blackwhite',
+  },
   // drawn at the printer's own density, without smoothing, in pure black: the thermal head has no grey, and
   // smoothed edges of the rotated parts (180° / 90° barcodes and text) printed faint
   bagTag: {
