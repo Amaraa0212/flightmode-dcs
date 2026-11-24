@@ -19,6 +19,11 @@ export type PrinterSettings = {
   bagTagFallback: string
   /** paper tray (QZ `bin`) of the bag tag printer, '' = the printer's default feeder */
   bagTagFeeder: string
+  /**
+   * Boarding pass as raw ESC/POS straight to the printer (no Windows driver): for a POS-80 that pauses midway
+   * while the driver feeds it the page band by band
+   */
+  boardingPassRaw: boolean
 }
 
 export const DEFAULT_PRINTERS: PrinterSettings = {
@@ -26,6 +31,7 @@ export const DEFAULT_PRINTERS: PrinterSettings = {
   bagTag: 'PrinterBagTag',
   bagTagFallback: 'BTP',
   bagTagFeeder: '',
+  boardingPassRaw: false,
 }
 
 /** Printer names are per counter PC → kept in this browser only */
@@ -142,6 +148,32 @@ const PAGE = {
   },
 } as const
 
+/** 80 mm printer head: 72 mm printable at 203 dpi = 576 dots */
+const ESCPOS_WIDTH_DOTS = 576
+/** the pass is laid out 80 mm wide (≈302 CSS px); zoomed so it fills the 576-dot head */
+const ESCPOS_ZOOM = 1.9
+
+/**
+ * One boarding pass as raw ESC/POS: QZ renders the same HTML at the head's width, sends it as a raster image
+ * straight to the printer (no Windows driver banding — the pass prints in one go), then feeds and cuts.
+ */
+function escposBoardingPass(html: string) {
+  const zoomed = html.replace('<head>', `<head><style>html { zoom: ${ESCPOS_ZOOM}; }</style>`)
+  const command = (data: string) => ({ type: 'raw' as const, format: 'command' as const, flavor: 'plain' as const, data })
+  return [
+    command('\x1B\x40'), // ESC @ — reset
+    {
+      type: 'raw' as const,
+      format: 'html' as const,
+      flavor: 'plain' as const,
+      data: zoomed,
+      options: { language: 'ESCPOS', dotDensity: 'double', pageWidth: ESCPOS_WIDTH_DOTS },
+    },
+    command('\x0A\x0A\x0A\x0A'), // feed past the cutter
+    command('\x1D\x56\x41\x00'), // GS V A 0 — cut
+  ]
+}
+
 /** Prints complete HTML documents, one job each, on the counter printer of that kind. */
 export async function qzPrintHtml(kind: 'boardingPass' | 'bagTag', documents: string[]) {
   await connectQz()
@@ -149,6 +181,11 @@ export async function qzPrintHtml(kind: 'boardingPass' | 'bagTag', documents: st
   const printer = await findPrinter(
     kind === 'boardingPass' ? [printers.boardingPass] : [printers.bagTag, printers.bagTagFallback]
   )
+  if (kind === 'boardingPass' && printers.boardingPassRaw) {
+    const raw = qz.configs.create(printer)
+    for (const html of documents) await qz.print(raw, escposBoardingPass(html))
+    return printer
+  }
   const feeder = kind === 'bagTag' ? printers.bagTagFeeder?.trim() : ''
   const config = qz.configs.create(printer, feeder ? { ...PAGE[kind], bin: feeder } : PAGE[kind])
   for (const html of documents) {
