@@ -172,7 +172,8 @@ export const dcsPassengerService = {
   /** Check in (auto seat) or change seat when seatNumber is given. */
   checkIn: (segmentId: number, seatNumber?: string) =>
     action(
-      client.post<ApiAction<ApiSegment>>(`/dcs/segments/${segmentId}/check-in`, {
+      // group_checked_in: the group's members with held seats, checked in on them as well
+      client.post<ApiAction<ApiSegment & { group_checked_in?: number[] }>>(`/dcs/segments/${segmentId}/check-in`, {
         seat_number: seatNumber ?? null,
       }),
       (s) => s

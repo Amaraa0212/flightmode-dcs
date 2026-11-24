@@ -74,7 +74,10 @@ export function usePassengerActions(options?: {
     checkIn: useDcsMutation(
       (vars: { segmentId: number; seat?: string; print?: boolean }) =>
         dcsPassengerService.checkIn(vars.segmentId, vars.seat),
-      (_res, vars) => vars.print && void printBoardingPass(vars.segmentId)
+      // the group's members checked in on their held seats get their boarding passes too
+      (res, vars) =>
+        vars.print &&
+        [vars.segmentId, ...(res.body?.group_checked_in ?? [])].forEach((id) => void printBoardingPass(id))
     ),
     uncheck: useDcsMutation((segmentId: number) =>
       dcsPassengerService.uncheck(segmentId)
