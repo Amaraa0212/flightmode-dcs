@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { BriefcaseBusiness, FileText, Globe, Users } from 'lucide-react'
 import type { DcsFlight, DcsPassenger } from '@/services'
+import { BriefcaseBusiness, FileText, Globe, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
 import { Button } from '@/components/ui/button'
 import { focusSoon, MOD, useCommand } from '../shortcuts'
 import { BaggageTab } from './baggage-tab'
+import { type CheckinTab, TABLE_CONFIG } from './constants'
 import { ManifestDialog } from './manifest-dialog'
 import { NationalityTab } from './nationality-tab'
-import { type CheckinTab, TABLE_CONFIG } from './constants'
 import { PanelHeader } from './panel-header'
 import { PassengersTab } from './passengers-tab'
 
@@ -22,12 +22,18 @@ type PassengerListPanelProps = {
   onSelect: (passenger: DcsPassenger) => void
   /** baggage view → the bag owner's passenger, back in the passenger view */
   onSelectBagOwner: (segmentId: number) => void
+  /** Ctrl+S: drop the selected passenger and go back to the passenger view (one navigation) */
+  onStartSearch: () => void
 }
 
 const VIEWS = [
   { value: 'passengers', label: 'Passenger view', icon: Users },
   { value: 'baggage', label: 'Baggage view', icon: BriefcaseBusiness },
-  { value: 'nationality', label: 'Citizenship / passport country', icon: Globe },
+  {
+    value: 'nationality',
+    label: 'Citizenship / passport country',
+    icon: Globe,
+  },
 ] as const
 
 const TITLES: Record<CheckinTab, string> = {
@@ -35,11 +41,27 @@ const TITLES: Record<CheckinTab, string> = {
   baggage: 'Baggage',
   nationality: 'Citizenship',
 }
-const SHORTCUT: Partial<Record<CheckinTab, string>> = { passengers: 'E', baggage: 'D' }
+const SHORTCUT: Partial<Record<CheckinTab, string>> = {
+  passengers: 'E',
+  baggage: 'D',
+}
 
-function SummaryChip({ label, value, className }: { label: string; value: number; className: string }) {
+function SummaryChip({
+  label,
+  value,
+  className,
+}: {
+  label: string
+  value: number
+  className: string
+}) {
   return (
-    <span className={cn('rounded-md border px-2.5 py-1 text-xs font-semibold', className)}>
+    <span
+      className={cn(
+        'rounded-md border px-2.5 py-1 text-xs font-semibold',
+        className
+      )}
+    >
       {label}: <span className='font-mono'>{value}</span>
     </span>
   )
@@ -54,12 +76,14 @@ export function PassengerListPanel({
   selectedId,
   onSelect,
   onSelectBagOwner,
+  onStartSearch,
 }: PassengerListPanelProps) {
   const { stats } = flight
 
-  // Ctrl+S: the passenger search box (switches back from the baggage list first)
+  // Ctrl+S: the selected passenger is let go and the passenger search box takes the cursor
+  // (its text selected, so typing starts a new search)
   useCommand('search', () => {
-    if (view !== 'passengers') onViewChange('passengers')
+    onStartSearch()
     focusSoon(() =>
       document.querySelector<HTMLInputElement>(
         `input[placeholder="${TABLE_CONFIG.PASSENGER_SEARCH_PLACEHOLDER}"]`
@@ -78,7 +102,11 @@ export function PassengerListPanel({
               <button
                 key={value}
                 type='button'
-                title={SHORTCUT[value] ? `${label} (${MOD}+${SHORTCUT[value]})` : label}
+                title={
+                  SHORTCUT[value]
+                    ? `${label} (${MOD}+${SHORTCUT[value]})`
+                    : label
+                }
                 aria-label={label}
                 onClick={() => onViewChange(value)}
                 className={cn(
@@ -121,9 +149,21 @@ export function PassengerListPanel({
         <span className='me-1 text-sm font-semibold'>
           Total PAX: <span className='font-mono'>{stats.booked}</span>
         </span>
-        <SummaryChip label='Wait list' value={stats.waitlisted} className='border-rose-400/30 bg-rose-500/10 text-rose-600 dark:text-rose-300' />
-        <SummaryChip label='Go Show' value={stats.go_show} className='border-indigo-400/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300' />
-        <SummaryChip label='OCI Check In' value={stats.online_checked_in} className='border-amber-400/30 bg-amber-500/10 text-amber-600 dark:text-amber-300' />
+        <SummaryChip
+          label='Wait list'
+          value={stats.waitlisted}
+          className='border-rose-400/30 bg-rose-500/10 text-rose-600 dark:text-rose-300'
+        />
+        <SummaryChip
+          label='Go Show'
+          value={stats.go_show}
+          className='border-indigo-400/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300'
+        />
+        <SummaryChip
+          label='OCI Check In'
+          value={stats.online_checked_in}
+          className='border-amber-400/30 bg-amber-500/10 text-amber-600 dark:text-amber-300'
+        />
         <Button
           size='sm'
           className='ms-auto gap-2 bg-emerald-500 text-white hover:bg-emerald-600'
@@ -133,7 +173,11 @@ export function PassengerListPanel({
           Manifest
         </Button>
       </div>
-      <ManifestDialog flight={flight} open={manifestOpen} onOpenChange={setManifestOpen} />
+      <ManifestDialog
+        flight={flight}
+        open={manifestOpen}
+        onOpenChange={setManifestOpen}
+      />
     </section>
   )
 }
