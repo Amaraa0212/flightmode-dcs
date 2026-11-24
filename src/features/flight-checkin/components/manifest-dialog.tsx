@@ -46,7 +46,9 @@ export function ManifestDialog({
   const [copies, setCopies] = useState<Record<Report, string>>({ balance: '3', passengers: '5', baggage: '5' })
   const [preparedBy, setPreparedBy] = useState('')
 
-  const count = (id: Report) => (checked[id] ? Math.max(0, Math.min(20, Number(copies[id]) || 0)) : 0)
+  // a ticked report prints 1–20 copies; untick it to leave it out
+  const count = (id: Report) =>
+    checked[id] ? Math.max(1, Math.min(20, Math.trunc(Number(copies[id])) || 1)) : 0
 
   const print = useMutation({
     mutationFn: async () => {
@@ -165,7 +167,11 @@ export function ManifestDialog({
                 aria-label={`${r.label} copies`}
                 disabled={!checked[r.id]}
                 value={copies[r.id]}
-                onChange={(e) => setCopies((s) => ({ ...s, [r.id]: e.target.value }))}
+                onChange={(e) =>
+                  setCopies((s) => ({ ...s, [r.id]: e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 2) }))
+                }
+                // empty or out of range on leaving the field: back to 1–20
+                onBlur={() => setCopies((s) => ({ ...s, [r.id]: String(count(r.id) || 1) }))}
                 className='h-8 w-16 font-mono'
               />
             </div>
