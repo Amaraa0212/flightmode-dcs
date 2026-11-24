@@ -4,7 +4,11 @@ import { dcsPassengerService, type DcsPassenger } from '@/services'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { passengerName } from '@/lib/flight'
-import { groupColors } from '@/lib/group-colors'
+import {
+  groupColors,
+  isOnlineCheckin,
+  passengerRowColour,
+} from '@/lib/group-colors'
 import { CABIN_OPTIONS, SEGMENT_STATUS_OPTIONS } from '@/constants/status'
 import { useFilterParams } from '@/hooks/use-filter-params'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
@@ -182,9 +186,10 @@ export function PassengersTab({
           pax.id === selectedId
             ? // pinned first row, stays under the header while the list scrolls
               '[&>td]:sticky [&>td]:top-8 [&>td]:z-[5] [&>td]:!bg-[color-mix(in_oklab,var(--color-cyan-400)_18%,var(--background))] [&>td]:border-b [&>td]:border-cyan-400/40 [&>td:first-child]:shadow-[inset_4px_0_0_var(--brand)]'
-            : pax.group_id
-              ? colors.get(pax.group_id)?.row
-              : undefined
+            : passengerRowColour(
+                isOnlineCheckin(pax),
+                pax.group_id ? colors.get(pax.group_id) : undefined
+              )
         }
         tableConfig={{
           pagination: {
