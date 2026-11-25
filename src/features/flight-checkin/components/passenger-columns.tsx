@@ -1,9 +1,9 @@
 import { type Column, type ColumnDef, type Row } from '@tanstack/react-table'
-import { Globe, ListOrdered, Monitor, Users } from 'lucide-react'
 import type { DcsPassenger } from '@/services'
-import { cn } from '@/lib/utils'
-import type { GroupColor } from '@/lib/group-colors'
+import { Globe, ListOrdered, Monitor, Users } from 'lucide-react'
 import { passengerName } from '@/lib/flight'
+import type { GroupColor } from '@/lib/group-colors'
+import { cn } from '@/lib/utils'
 import { PASSENGER_TYPE, SEGMENT_STATUS } from '@/constants/status'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
@@ -25,7 +25,10 @@ export const createPassengerColumns = ({
     id: 'select',
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label='Select all'
       />
@@ -63,7 +66,8 @@ export const createPassengerColumns = ({
             : 'text-muted-foreground border-dashed'
         )}
       >
-        {row.original.seat_number ?? (row.original.type === 'INF' ? 'INF' : '—')}
+        {row.original.seat_number ??
+          (row.original.type === 'INF' ? 'INF' : '—')}
       </span>
     ),
     enableSorting: false,
@@ -76,9 +80,19 @@ export const createPassengerColumns = ({
     cell: ({ row }: { row: Row<DcsPassenger> }) => {
       const pax = row.original
       return (
-        <div className={cn('flex items-center gap-2', pax.type === 'INF' && 'ps-3')}>
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            pax.type === 'INF' && 'ps-3'
+          )}
+        >
           {pax.type !== 'ADT' && (
-            <StatusChip value={pax.type} map={PASSENGER_TYPE} dot={false} className='px-1.5' />
+            <StatusChip
+              value={pax.type}
+              map={PASSENGER_TYPE}
+              dot={false}
+              className='px-1.5'
+            />
           )}
           <span
             className={cn(
@@ -102,7 +116,9 @@ export const createPassengerColumns = ({
           )}
           {pax.screening && pax.screening.status !== 'cleared' && (
             <span
-              title={pax.screening.bans.map((b) => `${b.ban_type}: ${b.reason}`).join('\n')}
+              title={pax.screening.bans
+                .map((b) => `${b.ban_type}: ${b.reason}`)
+                .join('\n')}
               className={cn(
                 'rounded px-1 text-[10px] font-bold uppercase',
                 pax.screening.status === 'banned'
@@ -147,7 +163,9 @@ export const createPassengerColumns = ({
           {row.original.cabin_class}
         </b>
         {row.original.fare_class && (
-          <span className='text-muted-foreground'>/{row.original.fare_class}</span>
+          <span className='text-muted-foreground'>
+            /{row.original.fare_class}
+          </span>
         )}
       </span>
     ),
@@ -199,10 +217,16 @@ export const createPassengerColumns = ({
         <div className='flex items-center gap-2'>
           <StatusChip value={row.original.status} map={SEGMENT_STATUS} />
           {channel === 'online' && (
-            <Globe className='text-muted-foreground size-3.5' aria-label='Online check-in' />
+            <Globe
+              className='size-3.5 text-[#c99a06] dark:text-[#efc121]'
+              aria-label='Online check-in'
+            />
           )}
           {channel === 'dcs' && (
-            <Monitor className='text-muted-foreground size-3.5' aria-label='Counter check-in' />
+            <Monitor
+              className='text-muted-foreground size-3.5'
+              aria-label='Counter check-in'
+            />
           )}
         </div>
       )
