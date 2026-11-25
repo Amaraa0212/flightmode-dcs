@@ -47,7 +47,7 @@ const alt = (key: string) => (e: KeyboardEvent) =>
   e.key === key && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
 
 export const SHORTCUTS: Shortcut[] = [
-  { id: 'search', keys: [MOD, 'S'], label: 'Search passengers', match: ctrl('KeyS') },
+  { id: 'search', keys: [MOD, 'S'], label: 'Search passengers (clears the selected passenger)', match: ctrl('KeyS') },
   { id: 'refresh', keys: [MOD, 'R'], label: 'Refresh (clears the passenger and the search)', match: ctrl('KeyR') },
   { id: 'passengerView', keys: [MOD, 'E'], label: 'Passenger view', match: ctrl('KeyE') },
   { id: 'baggageView', keys: [MOD, 'D'], label: 'Baggage view', match: ctrl('KeyD') },

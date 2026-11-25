@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
+import {
+  dcsFlightService,
+  dcsPassengerService,
+  type DcsPassenger,
+} from '@/services'
 import { PlaneTakeoff } from 'lucide-react'
 import { toast } from 'sonner'
-import { dcsFlightService, dcsPassengerService, type DcsPassenger } from '@/services'
 import { useOpenFlights } from '@/stores/open-flights-store'
 import { useFlightChannel } from '@/hooks/use-flight-channel'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
-import { useSidebar } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
+import { useSidebar } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Main } from '@/components/layout/main'
 import { BaggagePanel } from './components/baggage-panel'
@@ -49,7 +53,14 @@ export function FlightCheckin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const { data: flight, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const {
+    data: flight,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: [QUERY_KEYS.FLIGHT, flightId],
     queryFn: async () => (await dcsFlightService.getById(flightId)).body,
     retry: false,
@@ -108,8 +119,14 @@ export function FlightCheckin() {
         tab: value === 'passengers' ? undefined : value,
       }),
     })
+  // Ctrl+S: no passenger selected, passenger view; the list's search and filters stay
+  const startSearch = () =>
+    navigate({
+      search: (prev) => ({ ...prev, pax: undefined, tab: undefined }),
+    })
   // a bag in the baggage view → its owner selected, passenger view (baggage filters dropped)
-  const selectBagOwner = (segmentId: number) => navigate({ search: { pax: segmentId } })
+  const selectBagOwner = (segmentId: number) =>
+    navigate({ search: { pax: segmentId } })
 
   // ─── keyboard commands owned by the page (the panels register their own) ───
   useShortcutKeys()
@@ -123,10 +140,15 @@ export function FlightCheckin() {
   useCommand('passengerView', () => void setView('passengers'))
   useCommand('baggageView', () => void setView('baggage'))
   useCommand('boardingPass', () => {
-    if (selected && (selected.status === 'checked_in' || selected.status === 'boarded')) {
+    if (
+      selected &&
+      (selected.status === 'checked_in' || selected.status === 'boarded')
+    ) {
       void printBoardingPass(selected.id)
     } else {
-      toast.info('Select a checked-in passenger to print the boarding pass.', { id: 'shortcut' })
+      toast.info('Select a checked-in passenger to print the boarding pass.', {
+        id: 'shortcut',
+      })
     }
   })
   useCommand('escape', () => {
@@ -140,7 +162,9 @@ export function FlightCheckin() {
       <Main className='fm-backdrop flex flex-1 flex-col items-center justify-center gap-3 text-center'>
         <PlaneTakeoff className='text-muted-foreground size-10' />
         <p className='font-semibold'>Flight #{flightId} is not available</p>
-        <p className='text-muted-foreground text-sm'>{(error as Error).message}</p>
+        <p className='text-muted-foreground text-sm'>
+          {(error as Error).message}
+        </p>
         <Button asChild size='sm'>
           <Link to='/'>Back to departures</Link>
         </Button>
@@ -181,6 +205,7 @@ export function FlightCheckin() {
               selectedId={search.pax}
               onSelect={selectPassenger}
               onSelectBagOwner={selectBagOwner}
+              onStartSearch={startSearch}
             />
           ),
           info: (
@@ -193,7 +218,13 @@ export function FlightCheckin() {
             />
           ),
           // keyed: the option, pieces and weight typed for one passenger must not carry over to the next
-          baggage: <BaggagePanel key={search.pax ?? 'none'} flight={flight} segmentId={search.pax} />,
+          baggage: (
+            <BaggagePanel
+              key={search.pax ?? 'none'}
+              flight={flight}
+              segmentId={search.pax}
+            />
+          ),
           seats: (
             <SeatMapView
               flightId={flightId}
