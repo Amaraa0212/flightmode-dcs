@@ -9,6 +9,7 @@ import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AnnouncementBell, RequiredAnnouncementsModal } from '@/components/announcements'
+import { IdleSignOut } from '@/components/idle-sign-out'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { TwoFactorSetupPrompt } from '@/components/two-factor'
 import { PageHelp } from '@/components/page-help/page-help'
@@ -68,6 +69,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               </Header>
               {children ?? <Outlet />}
               <RequiredAnnouncementsModal then={<TwoFactorSetupPrompt />} />
+              <IdleSignOut />
             </SidebarInset>
           </SidebarProvider>
         </DrawerProvider>
