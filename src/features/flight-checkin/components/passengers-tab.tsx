@@ -145,10 +145,16 @@ export function PassengersTab({
         scrollable
         enableRowSelection
         renderAfterTable={(table) => {
-          const ticked = table.getFilteredSelectedRowModel().rows
+          // every ticked passenger, also those the name search hides now (search A, tick, search B, tick, group)
+          const tickedIds = new Set(
+            Object.entries(table.getState().rowSelection)
+              .filter(([, on]) => on)
+              .map(([id]) => Number(id))
+          )
+          const ticked = (rows ?? []).filter((r) => tickedIds.has(r.id))
           const groupTicked = () =>
             group.mutate(
-              { flightId, segmentIds: ticked.map((r) => r.original.id) },
+              { flightId, segmentIds: ticked.map((r) => r.id) },
               { onSuccess: () => table.resetRowSelection() }
             )
           return (
@@ -165,7 +171,11 @@ export function PassengersTab({
                   groupTicked()
                 }}
               />
-              <DataTableBulkActions table={table} entityName='passenger'>
+              <DataTableBulkActions
+                table={table}
+                entityName='passenger'
+                count={ticked.length}
+              >
                 <Button
                   size='sm'
                   className='h-7 gap-1.5'

@@ -15,15 +15,18 @@ type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
   entityName: string
   children: React.ReactNode
+  /** selected rows, also those a search / filter hides now (default: the visible selected rows) */
+  count?: number
 }
 
 export function DataTableBulkActions<TData>({
   table,
   entityName,
   children,
+  count,
 }: DataTableBulkActionsProps<TData>): React.ReactNode | null {
   const selectedRows = table.getFilteredSelectedRowModel().rows
-  const selectedCount = selectedRows.length
+  const selectedCount = count ?? selectedRows.length
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [announcement, setAnnouncement] = useState('')
 
